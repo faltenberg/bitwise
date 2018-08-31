@@ -12,3 +12,5 @@ Modules
 -------
 
 The project is divided into the following modules:
+
+- Ion: a simple C-like programming language that will be used to write the software stack
