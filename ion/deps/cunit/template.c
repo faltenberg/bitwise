@@ -8,12 +8,12 @@
  * ```c
  * #include "cunit.h"
  *
- * extern TestResult template_alltests();
+ * extern TestResult template_alltests(PrintLevel);
  *
  * int main() {
  *   TestResult result = {};
- *   result = unite(result, template_alltests());
- *   // printf("Result: %d of %d tests failed\n", result.failedTests, result.totalTests);
+ *   result = unite(result, template_alltests(VERBOSE));
+ *   printf("Result: %d of %d tests failed\n", result.failedTests, result.totalTests);
  * }
  * ```
  *
@@ -49,11 +49,11 @@ static TestResult testWithMacros() {
 }
 
 
-TestResult template_alltests() {
+TestResult template_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite(__FILE__, "Test Suite Template");
   addTest(&suite, &simpleTest,     "simpleTest");
   addTest(&suite, &testWithMacros, "testWithMacros");
-  TestResult result = run(&suite);
+  TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
   return result;
 }

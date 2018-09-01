@@ -2,7 +2,7 @@
 #define __CUNIT_H__
 
 #include <stdbool.h>
-#include <stdio.h>
+#include <stddef.h>
 
 
 /******************************************** STRUCTS ********************************************/
@@ -26,6 +26,17 @@ typedef struct Test {
 } Test;
 
 
+typedef enum PrintLevel {
+  SILENT, SPARSE, VERBOSE
+} PrintLevel;
+
+void printVerbose(const char* format, ...);
+
+void printSparse(const char* format, ...);
+
+void printAlways(const char* format, ...);
+
+
 typedef struct TestSuite {
   const char* name;
   const char* description;
@@ -39,7 +50,7 @@ void deleteSuite(TestSuite* suite);
 
 void addTest(TestSuite* suite, TEST_FN fn, const char* name);
 
-TestResult run(const TestSuite* suite);
+TestResult run(const TestSuite* suite, PrintLevel verbosity);
 
 
 /****************************************** ASSERTIONS *******************************************/
@@ -54,19 +65,18 @@ TestResult run(const TestSuite* suite);
 #define WHT "\x1B[37m"
 #define RST "\x1B[0m"
 
-
 #define __PROMPT " %s:%-3d ... "
 
-#define __ABORT printf(__PROMPT RED "ABORT\n" RST, __FILE__, __LINE__); return result;
+#define __ABORT printVerbose(__PROMPT RED "ABORT\n" RST, __FILE__, __LINE__); return result;
 #define ABORT(a) { bool __r = (a); apply(&result, __r); if (!__r) { __ABORT } }
 
 #define TEST(a) apply(&result, (a));
 
-#define SKIP(a) printf(__PROMPT YEL "SKIPPED\n" RST, __FILE__, __LINE__);
+#define SKIP(a) printVerbose(__PROMPT YEL "SKIPPED\n" RST, __FILE__, __LINE__);
 
-#define FAIL(m) apply(&result, 0); printf(__PROMPT RED "FAIL: " RST "%s\n", __FILE__, __LINE__, m);
+#define FAIL(m) apply(&result, 0); printVerbose(__PROMPT RED "FAIL: " RST "%s\n", __FILE__, __LINE__, m);
 
-#define INFO(m) printf(__PROMPT BLU "INFO: " RST "%s\n", __FILE__, __LINE__, m);
+#define INFO(m) printVerbose(__PROMPT BLU "INFO: " RST "%s\n", __FILE__, __LINE__, m);
 
 
 #define assertFalse(val) __assertFalse(__FILE__, __LINE__, val)
