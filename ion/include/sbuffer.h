@@ -3,7 +3,6 @@
 
 #include <stddef.h>
 #include <stdlib.h>
-#include <assert.h>
 
 
 /**
@@ -62,25 +61,10 @@ typedef struct BufHeader {
 
 #define bufPush(b, x) ( bufFit(b, 1), (b)[__bufHeader(b)->length++] = (x) )
 
-#define bufFree(b) ( (b) ? (free(__bufHeader(buffer)), (b) = NULL) : 0 )
+#define bufFree(b) ( (b) ? (free(__bufHeader(b)), (b) = NULL) : 0 )
 
 
-#define __MAX(a, b) ( (a) >= (b) ? (a) : (b) )
-
-void* __bufGrow(const void* buffer, size_t newLength, size_t elementSize) {
-  size_t newCapacity = __MAX(1 + 2*bufCapacity(buffer), newLength);
-  assert(newCapacity >= newLength);
-  size_t newSize = newCapacity * elementSize + offsetof(BufHeader, bytes);
-  BufHeader* newHeader;
-  if (buffer) {
-    newHeader = (BufHeader*) realloc(__bufHeader(buffer), newSize);
-  } else {
-    newHeader = (BufHeader*) malloc(newSize);
-    newHeader->length = 0;
-  }
-  newHeader->capacity = newCapacity;
-  return newHeader->bytes;
-}
+void* __bufGrow(const void* buffer, size_t newLength, size_t elementSize);
 
 
 #endif  // __SBUFFER_H__

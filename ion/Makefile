@@ -1,8 +1,8 @@
 OPT_DEBUG = -O0 -g -Wall
 OPT_RELEASE = -O3
 
-#OPT = ${OPT_DEBUG}
-OPT = ${OPT_RELEASE}
+OPT = ${OPT_DEBUG}
+#OPT = ${OPT_RELEASE}
 
 
 .PHONY: all
@@ -27,8 +27,9 @@ exe: lib
 
 .PHONY: test
 test: lib
+	$(eval SRC_FILES := $(filter-out src/ion.c, $(wildcard src/*.c)) )
 	mkdir -p bin/
-	clang ${OPT} -Iinclude/ -Ideps/ -Ldeps/cunit/ -o bin/test test/*.c -lcunit
+	clang ${OPT} -Iinclude/ -Ideps/ -Ldeps/cunit/ -o bin/test test/*.c ${SRC_FILES} -lcunit
 	@echo "--------------------------------------------------------------------------------"
 	@bin/test
 
