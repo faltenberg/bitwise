@@ -2,6 +2,7 @@
 #include "sbuffer.h"
 
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 
@@ -34,4 +35,12 @@ const char* strinternRange(const char* start, const char* end) {
   String s = {length, chars};
   bufPush(_strings, s);
   return chars;
+}
+
+
+void strinternFree() {
+  for (size_t i = 0; i < bufLength(_strings); i++) {
+    free((char*) _strings[i].chars);
+  }
+  bufFree(_strings);
 }

@@ -27,6 +27,7 @@
  *   assert(a == b);                    // no need for costly strcmp()
  *   assert(a == c);
  *   assert(a != "abc");                // "abc" resides in the data segment, is not interned
+ *   strinternFree();                   // release internal memory
  * }
  * ```
  */
@@ -35,6 +36,8 @@
 const char* strintern(const char* string);
 
 const char* strinternRange(const char* start, const char* end);
+
+void strinternFree();
 
 
 #endif  // __STRINTERN_H__
