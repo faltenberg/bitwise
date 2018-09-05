@@ -25,7 +25,7 @@
  * Example
  * -------
  *
- * ```
+ * ```c
  * #include "sbuffer.h"
  *
  * int main() {

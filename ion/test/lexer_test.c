@@ -7,23 +7,23 @@
 #include <stdarg.h>
 
 
-static char**       testNames      = NULL;
-static const char** inputStreams   = NULL;
-static Token**      expectedTokens = NULL;
-static size_t       currentTest    = 0;
+static char**       _testNames      = NULL;
+static const char** _inputStreams   = NULL;
+static Token**      _expectedTokens = NULL;
+static size_t       _currentTest    = 0;
 
 
 static void deleteTests() {
-  currentTest = 0;
-  for (size_t i = 0; i < bufLength(testNames); i++) {
-    free(testNames[i]);
+  _currentTest = 0;
+  for (size_t i = 0; i < bufLength(_testNames); i++) {
+    free(_testNames[i]);
   }
-  bufFree(testNames);
-  bufFree(inputStreams);
-  for (size_t i = 0; i < bufLength(expectedTokens); i++) {
-    bufFree(expectedTokens[i]);
+  bufFree(_testNames);
+  bufFree(_inputStreams);
+  for (size_t i = 0; i < bufLength(_expectedTokens); i++) {
+    bufFree(_expectedTokens[i]);
   }
-  bufFree(expectedTokens);
+  bufFree(_expectedTokens);
 }
 
 
@@ -69,9 +69,9 @@ bool __assertEqualToken(const char* file, int line,
 
 static TestResult test() {
   TestResult result = {};
-  size_t index = currentTest++;
-  Lexer lexer = newLexer(inputStreams[index]);
-  Token* tokens = expectedTokens[index];
+  size_t index = _currentTest++;
+  Lexer lexer = newLexer(_inputStreams[index]);
+  Token* tokens = _expectedTokens[index];
   for (int i = 0; i < bufLength(tokens); i++) {
     Token token = nextToken(&lexer);
     Token* expected = &tokens[i];
@@ -87,8 +87,8 @@ static void createTest(TestSuite* suite, const char* input, size_t numTokens, ..
   strcat(testName, input);
   strcat(testName, "\"");
 
-  bufPush(testNames, testName);
-  bufPush(inputStreams, input);
+  bufPush(_testNames, testName);
+  bufPush(_inputStreams, input);
 
   Token* tokens = NULL;
   va_list args;
@@ -98,7 +98,7 @@ static void createTest(TestSuite* suite, const char* input, size_t numTokens, ..
     bufPush(tokens, token);
   }
   va_end(args);
-  bufPush(expectedTokens, tokens);
+  bufPush(_expectedTokens, tokens);
 
   addTest(suite, &test, testName);
 }
@@ -223,7 +223,7 @@ TestResult lexer_alltests(PrintLevel verbosity) {
   in = "1 + 1";
   createTest(&suite, in, 4,
              token(in, 0, 0, TOKEN_INT, 1),
-             token(in, 2, 2, TOKEN_OPERATOR),
+             token(in, 2, 2, '+'),
              token(in, 4, 4, TOKEN_INT, 1),
              token(in, 5, 5, '\0')
             );
@@ -231,7 +231,7 @@ TestResult lexer_alltests(PrintLevel verbosity) {
   in = "a + b";
   createTest(&suite, in, 4,
              token(in, 0, 0, TOKEN_NAME),
-             token(in, 2, 2, TOKEN_OPERATOR),
+             token(in, 2, 2, '+'),
              token(in, 4, 4, TOKEN_NAME),
              token(in, 5, 5, '\0')
             );

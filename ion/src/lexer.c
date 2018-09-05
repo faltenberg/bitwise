@@ -42,14 +42,15 @@ Token nextToken(Lexer* lexer) {
       } while (isalnum(*lexer->stream) || *lexer->stream == '_');
       token.kind = TOKEN_NAME;
       break;
-
+/*
     case '+':  case '-':  case '*':  case '/':  case '%':
-    case '&':  case '|':  case '^':  case '!':
-    case '.':  case ',':  case ';':  case '=':
+    case '&':  case '|':  case '^':  case '!':  case '~':  case '=':
+    case '.':  case ',':  case ':':  case ';':  case '<':  case '>':
+    case '(':  case ')':  case '[':  case ']':  case '{':  case '}':
       lexer->stream++;
       token.kind = TOKEN_OPERATOR;
       break;
-
+*/
     default:
       token.kind = *lexer->stream++;
       break;
