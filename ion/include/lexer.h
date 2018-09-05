@@ -7,16 +7,19 @@
 typedef enum TokenKind {
   TOKEN_INT = 128,
   TOKEN_NAME,
-  TOKEN_OPERATOR
+  TOKEN_KEYWORD,
+  TOKEN_OPERATOR,
+  TOKEN_ERROR = 255,
 } TokenKind;
 
 
 typedef struct Token {
-  TokenKind kind;
-  const char* start;
-  const char* end;
+  TokenKind     kind;
+  const char*   start;
+  const char*   end;
   union {
-    uint64_t value;
+    uint64_t    value;
+    const char* name;
   };
 } Token;
 

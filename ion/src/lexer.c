@@ -1,10 +1,33 @@
 #include "lexer.h"
 #include "sbuffer.h"
+#include "strintern.h"
 
 #include <ctype.h>
+#include <stdbool.h>
+
+
+static const char* _keywordIf;
+static const char* _keywordElse;
+static const char* _keywordFor;
+static const char* _keywordWhile;
+
+
+static void init() {
+  _keywordIf    = strintern("if");
+  _keywordElse  = strintern("else");
+  _keywordFor   = strintern("for");
+  _keywordWhile = strintern("while");
+}
+
+
+static bool isKeyword(const char* token) {
+  return token == _keywordIf  || token == _keywordElse  ||
+         token == _keywordFor || token == _keywordWhile;
+}
 
 
 Lexer newLexer(const char* stream) {
+  init();
   return (Lexer) { .stream=stream };
 }
 
@@ -40,7 +63,8 @@ Token nextToken(Lexer* lexer) {
       do {
         lexer->stream++;
       } while (isalnum(*lexer->stream) || *lexer->stream == '_');
-      token.kind = TOKEN_NAME;
+      token.name = strinternRange(token.start, lexer->stream);
+      token.kind = isKeyword(token.name) ? TOKEN_KEYWORD : TOKEN_NAME;
       break;
 /*
     case '+':  case '-':  case '*':  case '/':  case '%':
