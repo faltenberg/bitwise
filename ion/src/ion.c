@@ -3,10 +3,22 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <assert.h>
+
+
+#define NOP ' '
+#define LIT '#'
+#define ADD '+'
+#define SUB '-'
+#define NEG '~'
+#define MUL '*'
+#define DIV '/'
+#define HLT '\0'
 
 
 static Lexer lexer;
 static Token currentToken;
+static unsigned char* code;
 
 
 static void printToken(const Token* token) {
@@ -65,56 +77,55 @@ static bool expectToken(TokenKind kind) {
 }
 
 
-static int parse_expr();
-static int parse_expr3() {
+static void parse_expr0();
+static void parse_expr3() {
   if (isTokenKind(&currentToken, TOKEN_INT)) {
-    int result = currentToken.value;
+    bufPush(code, LIT);
+    int value = currentToken.value;
+    bufPush(code, (unsigned char) value >> 0);
+    bufPush(code, (unsigned char) value >> 8);
+    bufPush(code, (unsigned char) value >> 16);
+    bufPush(code, (unsigned char) value >> 24);
     getNextToken();
-    return result;
   } else if (matchToken('(')) {
-    int result = parse_expr();
+    parse_expr0();
     expectToken(')');
-    return result;
   } else {
     printf("ERROR: expected TOKEN_INT or '(' but got Token(%d)\n", currentToken.kind);
     exit(1);
-    return 0;
   }
 }
 
 
-static int parse_expr2() {
+static void parse_expr2() {
   if (matchToken('-')) {
-    return -parse_expr3();
+    parse_expr3();
+    bufPush(code, NEG);
   } else {
-    return parse_expr3();
+    parse_expr3();
   }
 }
 
 
-static int parse_expr1() {
-  int a = parse_expr2();
-  int result = a;
+static void parse_expr1() {
+  parse_expr2();
   if (isTokenKind(&currentToken, '*') || isTokenKind(&currentToken, '/')) {
     char op = currentToken.kind;
     getNextToken();
-    int b = parse_expr2();
-    result = (op == '*') ? a*b : a/b;
+    parse_expr2();
+    bufPush(code, op);
   }
-  return result;
 }
 
 
-static int parse_expr0() {
-  int a = parse_expr1();
-  int result = a;
+static void parse_expr0() {
+  parse_expr1();
   if (isTokenKind(&currentToken, '+') || isTokenKind(&currentToken, '-')) {
     char op = currentToken.kind;
     getNextToken();
-    int b = parse_expr1();
-    result = (op == '+') ? a+b : a-b;
+    parse_expr1();
+    bufPush(code, op);
   }
-  return result;
 }
 
 
@@ -125,19 +136,108 @@ static int parse_expr0() {
  * expr0 = expr1 ([+-] expr1)*
  * expr = expr0
  */
-static int parse_expr() {
-  return parse_expr0();
+static void parse_expr() {
+  parse_expr0();
+  bufPush(code, HLT);
+}
+
+
+#define MAX_STACK  1024
+#define POP()      (*top--)
+#define PUSH(x)    (*++top = (x))
+#define POPS(n)    assert(top - stack >= (n))
+#define PUSHES(n)  assert(top + (n) <= stack + MAX_STACK)
+
+int vm_exec(const unsigned char* code) {
+  int stack[MAX_STACK];
+  int* top = stack;
+  *top = 0xDEADBEEF;
+
+  for (int i = 0, running = 1; running; i++) {
+    switch (code[i]) {
+      case NOP:
+        continue;
+
+      case LIT: {
+        int value = (code[++i] << 0) + (code[++i] << 8) + (code[++i] << 16) + (code[++i] << 24);
+        PUSHES(1);
+        PUSH(value);
+      } break;
+
+      case ADD: {
+        POPS(2);
+        int r = POP();
+        int l = POP();
+        PUSHES(1);
+        PUSH(l + r);
+      } break;
+
+      case SUB: {
+        POPS(2);
+        int r = POP();
+        int l = POP();
+        PUSHES(1);
+        PUSH(l - r);
+      } break;
+
+      case NEG: {
+        POPS(1);
+        int v = POP();
+        PUSHES(1);
+        PUSH(-v);
+      } break;
+
+      case MUL: {
+        POPS(2);
+        int r = POP();
+        int l = POP();
+        PUSHES(1);
+        PUSH(l * r);
+      } break;
+
+      case DIV: {
+        POPS(2);
+        int r = POP();
+        int l = POP();
+        PUSHES(1);
+        PUSH(l / r);
+      } break;
+
+      case HLT:
+        running = 0;
+        break;
+
+      default:
+        printf("FATAL: unknown opcode(%c)\n", code[i]);
+    }
+  }
+
+  return *top;
 }
 
 
 static void test_parse_expr(const char* expr, int expected) {
+  printf("Parse: \"%s\"\n", expr);
   lexer = newLexer(expr);
-  printf("Stream: \"%s\"\n", lexer.stream);
+  currentToken = (Token) {};
   getNextToken();
-  int value = parse_expr();
+  code = NULL;
+  parse_expr();
+  printf("  Exec {");
+  for (int i = 0; code[i] != HLT; i++) {
+    printf(" %c", code[i]);
+    if (code[i] == LIT) {
+      int value = (code[++i] << 0) + (code[++i] << 8) + (code[++i] << 16) + (code[++i] << 24);
+      printf("%d", value);
+      continue;
+    }
+  }
+  printf(" } ...\n");
+  int value = vm_exec(code);
   if (value != expected) {
     printf("ERROR: expected %d == %d\n", value, expected);
   }
+  bufFree(code);
 }
 
 
@@ -155,6 +255,7 @@ int main(int argc, char** argv) {
   TEST_EXPR(1 + 2 * 3);
   TEST_EXPR((1 + 2) * 3);
   TEST_EXPR(1 + (2 * 3));
+  TEST_EXPR(1 * (2 + 3));
   TEST_EXPR((1 + 2) / (2 - 3));
   return 0;
 }
