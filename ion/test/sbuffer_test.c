@@ -255,6 +255,46 @@ static TestResult testPushElements() {
 }
 
 
+static TestResult testIteration() {
+  TestResult result = {};
+
+  {
+    int* buffer = NULL;
+    TEST(assertNull(bufEnd(buffer)));
+  }
+
+  {
+    int* buffer = NULL;
+    bufPush(buffer, 42);
+    ABORT(assertNotNull(bufEnd(buffer)));
+    TEST(assertSame(bufEnd(buffer), buffer+1));
+    bufFree(buffer);
+  }
+
+  {
+    int* buffer = NULL;
+    bufFit(buffer, 10);
+    TEST(assertSame(bufEnd(buffer), buffer));
+    __bufHeader(buffer)->length = bufCapacity(buffer);
+    TEST(assertSame(bufEnd(buffer), buffer+10))
+    bufFree(buffer);
+  }
+
+  {
+    int* buffer = NULL;
+    for (int i = 0; i < 4; i++) {
+      bufPush(buffer, 42+i);
+    }
+    for (int* it = buffer; it != bufEnd(buffer); it++) {
+      TEST(assertEqualInt(*it, 42 + (it - buffer)));
+    }
+    bufFree(buffer);
+  }
+
+  return result;
+}
+
+
 static TestResult testFreeBuffer() {
   TestResult result = {};
 
@@ -288,6 +328,7 @@ TestResult sbuffer_alltests(PrintLevel verbosity) {
   addTest(&suite, &testGrowthOfNonEmptyBuffer, "testGrowthOfNonEmptyBuffer");
   addTest(&suite, &testFitBuffer,              "testFitBuffer");
   addTest(&suite, &testPushElements,           "testPushElements");
+  addTest(&suite, &testIteration,              "testIteration");
   addTest(&suite, &testFreeBuffer,             "testFreeBuffer");
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
