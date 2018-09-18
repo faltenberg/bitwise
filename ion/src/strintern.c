@@ -23,9 +23,9 @@ const char* strintern(const char* string) {
 const char* strinternRange(const char* start, const char* end) {
   size_t length = end - start;
 
-  for (size_t i = 0; i < bufLength(_strings); i++) {
-    if (length == _strings[i].length && strncmp(start, _strings[i].chars, length) == 0) {
-      return _strings[i].chars;
+  for (String* s = _strings; s != bufEnd(_strings); s++) {
+    if (length == s->length && strncmp(start, s->chars, length) == 0) {
+      return s->chars;
     }
   }
 
@@ -39,8 +39,8 @@ const char* strinternRange(const char* start, const char* end) {
 
 
 void strinternFree() {
-  for (size_t i = 0; i < bufLength(_strings); i++) {
-    free((char*) _strings[i].chars);
+  for (String* s = _strings; s != bufEnd(_strings); s++) {
+    free((char*) s->chars);
   }
   bufFree(_strings);
 }

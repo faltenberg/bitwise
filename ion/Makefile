@@ -26,7 +26,7 @@ exe: lib
 
 
 .PHONY: test
-test: exe
+test: lib
 	$(eval SRC_FILES := $(filter-out src/ion.c, $(wildcard src/*.c)) )
 	mkdir -p bin/
 	clang ${OPT} -Iinclude/ -Ideps/ -Ldeps/cunit/ -o bin/test test/*.c ${SRC_FILES} -lcunit

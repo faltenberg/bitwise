@@ -153,7 +153,7 @@ int vm_exec(const unsigned char* code) {
   int* top = stack;
   *top = 0xDEADBEEF;
 
-  for (int i = 0, running = 1; running; i++) {
+  for (size_t i = 0, running = 1; running; i++) {
     switch (code[i]) {
       case NOP:
         continue;
@@ -224,7 +224,7 @@ static void test_parse_expr(const char* expr, int expected) {
   code = NULL;
   parse_expr();
   printf("  Exec {");
-  for (int i = 0; code[i] != HLT; i++) {
+  for (size_t i = 0; code[i] != HLT; i++) {
     printf(" %c", code[i]);
     if (code[i] == LIT) {
       int value = (code[++i] << 0) + (code[++i] << 8) + (code[++i] << 16) + (code[++i] << 24);

@@ -34,12 +34,12 @@
  *                         // now bufCapacity(buffer) - bufLength(buffer) == 10
  *   bufPush(buffer, 42);  // (re-)allocates memory if necessary and stores value at the end
  *
- *   for (int i = 0; i < bufLength(buffer); i++) {  // buffers have a length information
- *     printf("[%d]: %d\n", i, buffer[i]);          // same access as with C arrays
+ *   for (size_t i = 0; i < bufLength(buffer); i++) {  // buffers have a length information
+ *     printf("[%d]: %d\n", i, buffer[i]);             // same access as with C arrays
  *   }
  *
  *   for (int* it = buffer; it != bufEnd(buffer); it++) {
- *     printf("%d\n", *it);                         // C++ like iteration is possible
+ *     printf("%d\n", *it);                            // C++ like iteration is possible
  *   }
  *
  *   bufFree(buffer);      // deallocates the memory and sets buffer to NULL
@@ -65,7 +65,7 @@ typedef struct BufHeader {
 
 #define bufFit(b, n) ( __bufFits(b, n) ? 0 : ((b) = __bufGrow(b, bufLength(b)+(n), sizeof(*(b)))) )
 
-#define bufPush(b, x) ( bufFit(b, 1), (b)[__bufHeader(b)->length++] = (x) )
+#define bufPush(b, ...) ( bufFit(b, 1), (b)[__bufHeader(b)->length++] = (__VA_ARGS__) )
 
 #define bufEnd(b) ( (b) + bufLength(b) )
 

@@ -245,7 +245,7 @@ static TestResult testPushElements() {
     TEST(assertEqualSize(bufCapacity(buffer), 2*3 + 1));
     TEST(assertTrue(__bufFits(buffer, 2)));
     TEST(assertFalse(__bufFits(buffer, 3)));
-    for (int i = 0; i < bufLength(buffer); i++) {
+    for (size_t i = 0; i < bufLength(buffer); i++) {
       TEST(assertEqualInt(buffer[i], 42+i));
     }
     bufFree(buffer);
@@ -319,7 +319,8 @@ static TestResult testFreeBuffer() {
   return result;
 }
 
-
+#include <stdint.h>
+#include <assert.h>
 TestResult sbuffer_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<sbuffer>", "Test stretchy buffers.");
   addTest(&suite, &testBufferHeader,           "testBufferHeader");
