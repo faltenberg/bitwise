@@ -32,7 +32,7 @@ const char* strinternRange(const char* start, const char* end) {
   char* chars = (char*) malloc((length + 1) * sizeof(char));
   memcpy(chars, start, length);
   chars[length] = '\0';
-  String s = {length, chars};
+  String s = { .length=length, .chars=chars};
   bufPush(_strings, s);
   return chars;
 }

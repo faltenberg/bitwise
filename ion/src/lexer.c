@@ -1,5 +1,4 @@
 #include "lexer.h"
-#include "sbuffer.h"
 #include "strintern.h"
 
 #include <ctype.h>
@@ -28,7 +27,7 @@ static bool isKeyword(const char* token) {
 
 Lexer newLexer(const char* stream) {
   init();
-  return (Lexer) { .stream=stream };
+  return (Lexer){ .stream=stream };
 }
 
 
