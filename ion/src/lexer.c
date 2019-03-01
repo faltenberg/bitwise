@@ -5,23 +5,47 @@
 #include <stdbool.h>
 
 
-static const char* _keywordIf;
-static const char* _keywordElse;
-static const char* _keywordFor;
-static const char* _keywordWhile;
-
-
 static void init() {
-  _keywordIf    = strintern("if");
-  _keywordElse  = strintern("else");
-  _keywordFor   = strintern("for");
-  _keywordWhile = strintern("while");
+  KEYWORD_IF       = strintern("if");
+  KEYWORD_ELSE     = strintern("else");
+  KEYWORD_DO       = strintern("do");
+  KEYWORD_WHILE    = strintern("while");
+  KEYWORD_FOR      = strintern("for");
+  KEYWORD_SWITCH   = strintern("switch");
+  KEYWORD_CASE     = strintern("case");
+  KEYWORD_CONTINUE = strintern("continue");
+  KEYWORD_BREAK    = strintern("break");
+  KEYWORD_RETURN   = strintern("return");
+  KEYWORD_TRUE     = strintern("true");
+  KEYWORD_FALSE    = strintern("false");
+  KEYWORD_BOOL     = strintern("bool");
+  KEYWORD_INT      = strintern("int");
+  KEYWORD_VAR      = strintern("var");
+  KEYWORD_CONST    = strintern("const");
+  KEYWORD_FUNC     = strintern("func");
+  KEYWORD_STRUCT   = strintern("struct");
 }
 
 
 static bool isKeyword(const char* token) {
-  return token == _keywordIf  || token == _keywordElse  ||
-         token == _keywordFor || token == _keywordWhile;
+  return token == KEYWORD_IF ||
+         token == KEYWORD_ELSE ||
+         token == KEYWORD_DO ||
+         token == KEYWORD_WHILE ||
+         token == KEYWORD_FOR ||
+         token == KEYWORD_SWITCH ||
+         token == KEYWORD_CASE ||
+         token == KEYWORD_CONTINUE ||
+         token == KEYWORD_BREAK ||
+         token == KEYWORD_RETURN ||
+         token == KEYWORD_TRUE ||
+         token == KEYWORD_FALSE ||
+         token == KEYWORD_BOOL ||
+         token == KEYWORD_INT ||
+         token == KEYWORD_VAR ||
+         token == KEYWORD_CONST ||
+         token == KEYWORD_FUNC ||
+         token == KEYWORD_STRUCT;
 }
 
 
@@ -40,6 +64,11 @@ Token nextToken(Lexer* lexer) {
 
   token.start = lexer->stream;
   switch (*lexer->stream) {
+    case '\0':
+      lexer->stream++;
+      token.kind = TOKEN_EOF;
+      break;
+
     case '0':  case '1':  case '2':  case '3':  case '4':
     case '5':  case '6':  case '7':  case '8':  case '9':
       do {
@@ -65,17 +94,68 @@ Token nextToken(Lexer* lexer) {
       token.name = strinternRange(token.start, lexer->stream);
       token.kind = isKeyword(token.name) ? TOKEN_KEYWORD : TOKEN_NAME;
       break;
-/*
-    case '+':  case '-':  case '*':  case '/':  case '%':
-    case '&':  case '|':  case '^':  case '!':  case '~':  case '=':
-    case '.':  case ',':  case ':':  case ';':  case '<':  case '>':
-    case '(':  case ')':  case '[':  case ']':  case '{':  case '}':
+
+    case '+':  case '&':  case '|':  case ':':
       lexer->stream++;
+      if (*lexer->stream == *(lexer->stream-1) || *lexer->stream == '=') {
+        lexer->stream++;
+      }
       token.kind = TOKEN_OPERATOR;
+      token.optype = strinternRange(token.start, lexer->stream);
       break;
-*/
+
+    case '-':
+      lexer->stream++;
+      if (*lexer->stream == *(lexer->stream-1) || *lexer->stream == '=' || *lexer->stream == '>') {
+        lexer->stream++;
+      }
+      token.kind = TOKEN_OPERATOR;
+      token.optype = strinternRange(token.start, lexer->stream);
+      break;
+
+    case '*':  case '/':  case '%':  case '^':  case '~':  case '!':  case '=':
+      lexer->stream++;
+      if (*lexer->stream == '=') {
+        lexer->stream++;
+      }
+      token.kind = TOKEN_OPERATOR;
+      token.optype = strinternRange(token.start, lexer->stream);
+      break;
+
+    case '<':  case '>':
+      lexer->stream++;
+      if (*lexer->stream == *(lexer->stream-1) || *lexer->stream == '=') {
+        lexer->stream++;
+        if (*lexer->stream == *(lexer->stream-2) || *lexer->stream == '=') {
+          lexer->stream++;
+          if (*lexer->stream == '=') {
+            lexer->stream++;
+          }
+        }
+      }
+      token.kind = TOKEN_OPERATOR;
+      token.optype = strinternRange(token.start, lexer->stream);
+      break;
+
+    case '.':
+      lexer->stream++;
+      if (*lexer->stream == *(lexer->stream-1)) {
+        lexer->stream++;
+      }
+      token.kind = TOKEN_OPERATOR;
+      token.optype = strinternRange(token.start, lexer->stream);
+      break;
+
+    case ',':  case ';':  case '(':  case ')':  case '[':  case ']':  case '{':  case '}':
+      lexer->stream++;
+      token.kind = TOKEN_SEPARATOR;
+      token.optype = strinternRange(token.start, lexer->stream);
+      break;
+
     default:
-      token.kind = *lexer->stream++;
+      lexer->stream++;
+      token.kind = TOKEN_ERROR;
+      token.message = strintern("unknown character");
       break;
   }
   token.end = lexer->stream;

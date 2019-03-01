@@ -13,6 +13,7 @@ void* __bufGrow(const void* buffer, size_t newLength, size_t elementSize) {
   size_t newCapacity = MAX(1 + 2*bufCapacity(buffer), newLength);
   size_t newSize = newCapacity * elementSize + offsetof(BufHeader, bytes);
   assert(bufCapacity(buffer) <= (SIZE_MAX - 1)/2);
+  assert(newCapacity <= (SIZE_MAX - offsetof(BufHeader, bytes))/elementSize );
   assert(newCapacity >= newLength);
 
   BufHeader* newHeader;
