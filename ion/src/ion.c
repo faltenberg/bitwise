@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 
@@ -55,8 +56,16 @@ static bool isTokenName(const Token* token, const char* name) {
 }
 
 
-static bool matchToken(TokenKind kind) {
+static bool matchToken(TokenKind kind, const char* op) {
   if (isTokenKind(&currentToken, kind)) {
+    switch (kind) {
+      case TOKEN_OPERATOR:  case TOKEN_SEPARATOR:
+        if (strcmp(currentToken.optype, op) != 0) {
+          printf("ERROR: expected Token(%d), but got Token(%d)\n", kind, currentToken.kind);
+          exit(1);
+          return false;
+        }
+    }
     getNextToken();
     return true;
   } else {
@@ -65,8 +74,16 @@ static bool matchToken(TokenKind kind) {
 }
 
 
-static bool expectToken(TokenKind kind) {
+static bool expectToken(TokenKind kind, const char* op) {
   if (isTokenKind(&currentToken, kind)) {
+    switch (kind) {
+      case TOKEN_OPERATOR:  case TOKEN_SEPARATOR:
+        if (strcmp(currentToken.optype, op) != 0) {
+          printf("ERROR: expected Token(%d), but got Token(%d)\n", kind, currentToken.kind);
+          exit(1);
+          return false;
+        }
+    }
     getNextToken();
     return true;
   } else {
@@ -87,9 +104,9 @@ static void parse_expr3() {
     bufPush(code, (unsigned char) value >> 16);
     bufPush(code, (unsigned char) value >> 24);
     getNextToken();
-  } else if (matchToken('(')) {
+  } else if (matchToken(TOKEN_SEPARATOR, "(")) {
     parse_expr0();
-    expectToken(')');
+    expectToken(TOKEN_SEPARATOR, ")");
   } else {
     printf("ERROR: expected TOKEN_INT or '(' but got Token(%d)\n", currentToken.kind);
     exit(1);
@@ -98,7 +115,7 @@ static void parse_expr3() {
 
 
 static void parse_expr2() {
-  if (matchToken('-')) {
+  if (matchToken(TOKEN_OPERATOR, "-")) {
     parse_expr3();
     bufPush(code, NEG);
   } else {
@@ -109,8 +126,9 @@ static void parse_expr2() {
 
 static void parse_expr1() {
   parse_expr2();
-  if (isTokenKind(&currentToken, '*') || isTokenKind(&currentToken, '/')) {
-    char op = currentToken.kind;
+  if ((isTokenKind(&currentToken, TOKEN_OPERATOR) && strcmp(currentToken.optype, "*") == 0) ||
+      (isTokenKind(&currentToken, TOKEN_OPERATOR) && strcmp(currentToken.optype, "/") == 0) ) {
+    char op = currentToken.optype[0];
     getNextToken();
     parse_expr2();
     bufPush(code, op);
@@ -120,8 +138,9 @@ static void parse_expr1() {
 
 static void parse_expr0() {
   parse_expr1();
-  if (isTokenKind(&currentToken, '+') || isTokenKind(&currentToken, '-')) {
-    char op = currentToken.kind;
+  if ((isTokenKind(&currentToken, TOKEN_OPERATOR) && strcmp(currentToken.optype, "+") == 0) ||
+      (isTokenKind(&currentToken, TOKEN_OPERATOR) && strcmp(currentToken.optype, "-") == 0) ) {
+    char op = currentToken.optype[0];
     getNextToken();
     parse_expr1();
     bufPush(code, op);

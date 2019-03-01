@@ -1,0 +1,7 @@
+- low level access (better C)
+- no runtime environment
+- easier debug with @before and @after help-functions to separate concerns
+- easier benchmarking with @before and @after help-functions
+- defer statement
+- multiple return values
+- tuples
