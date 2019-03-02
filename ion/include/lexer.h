@@ -31,6 +31,7 @@ typedef enum TokenKind {
   TOKEN_KEYWORD,
   TOKEN_OPERATOR,
   TOKEN_SEPARATOR,
+  TOKEN_COMMENT,
   TOKEN_ERROR = 255,
 } TokenKind;
 

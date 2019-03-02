@@ -40,6 +40,9 @@ static void printToken(const Token* token) {
     case TOKEN_SEPARATOR:
       printVerbose("Token[ TOKEN_SEPARATOR: %s ]", token->optype);
       break;
+    case TOKEN_COMMENT:
+      printVerbose("Token[ TOKEN_COMMENT: \"%s\" ]", token->optype);
+      break;
     case TOKEN_ERROR:
       printVerbose("Token[ TOKEN_ERROR: %s ]", token->message);
       break;
@@ -633,6 +636,72 @@ TestResult lexer_alltests(PrintLevel verbosity) {
              token(TOKEN_OPERATOR, "="),
              token(TOKEN_INT, 42),
              token(TOKEN_SEPARATOR, ";"),
+             token(TOKEN_EOF)
+            );
+
+  in = "statement; // x=3;";
+  createTest(&suite, in, 4,
+             token(TOKEN_NAME, "statement"),
+             token(TOKEN_SEPARATOR, ";"),
+             token(TOKEN_COMMENT, "// x=3;"),
+             token(TOKEN_EOF)
+            );
+
+  in = "//";
+  createTest(&suite, in, 2,
+             token(TOKEN_COMMENT, "//"),
+             token(TOKEN_EOF)
+            );
+
+  in = "//\n return";
+  createTest(&suite, in, 3,
+             token(TOKEN_COMMENT, "//"),
+             token(TOKEN_KEYWORD, "return"),
+             token(TOKEN_EOF)
+            );
+
+  in = "a = /* 3 */;";
+  createTest(&suite, in, 5,
+             token(TOKEN_NAME, "a"),
+             token(TOKEN_OPERATOR, "="),
+             token(TOKEN_COMMENT, "/* 3 */"),
+             token(TOKEN_SEPARATOR, ";"),
+             token(TOKEN_EOF)
+            );
+
+  in = "/**/";
+  createTest(&suite, in, 2,
+             token(TOKEN_COMMENT, "/**/"),
+             token(TOKEN_EOF)
+            );
+
+  in = "/* some\n comment\n*/";
+  createTest(&suite, in, 2,
+             token(TOKEN_COMMENT, "/* some\n comment\n*/"),
+             token(TOKEN_EOF)
+            );
+
+  in = "/*";
+  createTest(&suite, in, 2,
+             token(TOKEN_ERROR),
+             token(TOKEN_EOF)
+            );
+
+  in = "/**";
+  createTest(&suite, in, 2,
+             token(TOKEN_ERROR),
+             token(TOKEN_EOF)
+            );
+
+  in = "/*/";
+  createTest(&suite, in, 2,
+             token(TOKEN_ERROR),
+             token(TOKEN_EOF)
+            );
+
+  in = "/**\n/";
+  createTest(&suite, in, 2,
+             token(TOKEN_ERROR),
              token(TOKEN_EOF)
             );
 

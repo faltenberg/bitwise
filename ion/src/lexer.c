@@ -147,7 +147,7 @@ Token nextToken(Lexer* lexer) {
       token.optype = strinternRange(token.start, lexer->stream);
     } break;
 
-    case '*':  case '/':  case '%':  case '^':  case '~':  case '!':  case '=':
+    case '*':  case '%':  case '^':  case '~':  case '!':  case '=':
     {
       lexer->stream++;
       lexer->currentPosition++;
@@ -157,6 +157,52 @@ Token nextToken(Lexer* lexer) {
       }
       token.kind = TOKEN_OPERATOR;
       token.optype = strinternRange(token.start, lexer->stream);
+    } break;
+
+    case '/':
+    {
+      lexer->stream++;
+      lexer->currentPosition++;
+      if (*lexer->stream == '/') {
+        token.kind = TOKEN_COMMENT;
+        do {
+          lexer->stream++;
+          lexer->currentPosition++;
+        } while (*lexer->stream != '\n' && *lexer->stream != '\r' && *lexer->stream != '\0');
+        token.message = (char*) malloc(lexer->stream - token.start + 1);
+        strncpy(token.message, token.start, lexer->stream - token.start);
+        token.message[lexer->stream - token.start] = '\0';
+      } else if (*lexer->stream == '*') {
+        token.kind = TOKEN_COMMENT;
+        lexer->stream++;
+        lexer->currentPosition++;
+        while (*lexer->stream != '*' || *(lexer->stream+1) != '/') {
+          if (*lexer->stream == '\0') {
+            token.kind = TOKEN_ERROR;
+            break;
+          }
+          lexer->stream++;
+          lexer->currentPosition++;
+        }
+        if (token.kind == TOKEN_ERROR) {
+          token.message = (char*) malloc(strlen(token.file) + 4 + 2*sizeof(size_t)*8 + 34 + 1);
+          sprintf(token.message, "%s:%d:%d  multi-line comment is never closed",
+                  token.file, token.line, token.pos);
+        } else {
+          lexer->stream += 2;
+          lexer->currentPosition += 2;
+          token.message = (char*) malloc(lexer->stream - token.start + 1);
+          strncpy(token.message, token.start, lexer->stream - token.start);
+          token.message[lexer->stream - token.start] = '\0';
+        }
+      } else {
+        if (*lexer->stream == '=') {
+          lexer->stream++;
+          lexer->currentPosition++;
+        }
+        token.kind = TOKEN_OPERATOR;
+        token.optype = strinternRange(token.start, lexer->stream);
+      }
     } break;
 
     case '<':  case '>':
