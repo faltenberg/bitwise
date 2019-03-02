@@ -36,24 +36,30 @@ typedef enum TokenKind {
 
 
 typedef struct Token {
+  const char*   file;
+  int           line;
+  int           pos;
   TokenKind     kind;
   const char*   start;
   const char*   end;
   union {
     uint64_t    value;
-    const char* name;
-    const char* optype;
-    const char* message;
+    char*       name;
+    char*       optype;
+    char*       message;
   };
 } Token;
 
 
 typedef struct Lexer {
+  const char* file;
   const char* stream;
+  int         currentLine;
+  int         currentPosition;
 } Lexer;
 
 
-Lexer newLexer(const char* stream);
+Lexer newLexer(const char* file, const char* stream);
 
 Token nextToken(Lexer* lexer);
 

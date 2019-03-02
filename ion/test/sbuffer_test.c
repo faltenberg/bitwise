@@ -319,8 +319,7 @@ static TestResult testFreeBuffer() {
   return result;
 }
 
-#include <stdint.h>
-#include <assert.h>
+
 TestResult sbuffer_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<sbuffer>", "Test stretchy buffers.");
   addTest(&suite, &testBufferHeader,           "testBufferHeader");

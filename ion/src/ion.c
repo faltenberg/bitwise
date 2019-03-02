@@ -237,7 +237,7 @@ int vm_exec(const unsigned char* code) {
 
 static void test_parse_expr(const char* expr, int expected) {
   printf("Parse: \"%s\"\n", expr);
-  lexer = newLexer(expr);
+  lexer = newLexer("", expr);
   currentToken = (Token) {};
   getNextToken();
   code = NULL;

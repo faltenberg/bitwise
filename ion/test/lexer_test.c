@@ -6,12 +6,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 
-static char**       _testNames      = NULL;
-static const char** _inputStreams   = NULL;
-static Token**      _expectedTokens = NULL;
-static size_t       _currentTest    = 0;
+typedef struct _Test {
+  char*        name;
+  const char*  input;
+  Token*       expected;
+} _Test;
+
+
+static _Test* _tests       = NULL;
+static size_t _currentTest = 0;
 
 
 static void printToken(const Token* token) {
@@ -70,80 +76,116 @@ static bool __assertEqualToken(const char* file, int line,
 
 static TestResult test() {
   TestResult result = {};
-  size_t index = _currentTest++;
-  Lexer lexer = newLexer(_inputStreams[index]);
-  Token* tokens = _expectedTokens[index];
-  for (size_t i = 0; i < bufLength(tokens); i++) {
+  Lexer lexer = newLexer("src", _tests[_currentTest].input);
+  Token* expected = _tests[_currentTest].expected;
+
+  for (size_t i = 0; i < bufLength(expected); i++) {
     Token token = nextToken(&lexer);
-    Token* expected = &tokens[i];
-    TEST(assertEqualToken(i, &token, expected));
+    TEST(assertEqualToken(i, &token, &expected[i]));
   }
+
+  _currentTest++;
   return result;
 }
 
 
 static void createTest(TestSuite* suite, const char* input, size_t numTokens, ...) {
-  char* testName = (char*) malloc((8 + strlen(input) + 1) * sizeof(char));
-  strcpy(testName, "parse \"");
-  strcat(testName, input);
-  strcat(testName, "\"");
-  strcat(testName, "\0");
+  char* testName = (char*) malloc(8 + strlen(input) + 1);
+  sprintf(testName, "parse \"%s\"", input);
 
-  bufPush(_testNames, testName);
-  bufPush(_inputStreams, input);
+  _Test t = (_Test){ .name=testName, .input=input, .expected=NULL };
 
-  Token* tokens = NULL;
   va_list args;
   va_start(args, numTokens);
   for (size_t i = 0; i < numTokens; i++) {
     Token token = va_arg(args, Token);
-    bufPush(tokens, token);
+    bufPush(t.expected, token);
   }
   va_end(args);
-  bufPush(_expectedTokens, tokens);
+
+  bufPush(_tests, t);
 
   addTest(suite, &test, testName);
 }
 
 
 static void deleteTests() {
+  for (size_t i = 0; i < bufLength(_tests); i++) {
+    free(_tests[i].name);
+    bufFree(_tests[i].expected);
+  }
+  bufFree(_tests);
+  _tests = NULL;
   _currentTest = 0;
-  for (size_t i = 0; i < bufLength(_testNames); i++) {
-    free(_testNames[i]);
+}
+
+
+static Token tokenVarg(int line, int pos, TokenKind kind, va_list args) {
+  Token token = { .file="exp", .line=line, .pos=pos, .kind=kind, .start="", .end="" };
+  if (kind == TOKEN_INT) {
+    token.value = va_arg(args, uint64_t);
+  } else if (kind == TOKEN_NAME || kind == TOKEN_KEYWORD) {
+    token.name = strintern(va_arg(args, const char*));
+  } else if (kind == TOKEN_OPERATOR || kind == TOKEN_SEPARATOR) {
+    token.optype = strintern(va_arg(args, const char*));
+  } else if (kind == TOKEN_ERROR) {
+    token.message = "error message";
   }
-  bufFree(_testNames);
-  bufFree(_inputStreams);
-  for (size_t i = 0; i < bufLength(_expectedTokens); i++) {
-    bufFree(_expectedTokens[i]);
-  }
-  bufFree(_expectedTokens);
+  return token;
 }
 
 
 static Token token(TokenKind kind, ...) {
-  Token token = { .kind=kind };
-  if (kind == TOKEN_INT) {
-    va_list args;
-    va_start(args, kind);
-    token.value = va_arg(args, uint64_t);
-    va_end(args);
-  } else if (kind == TOKEN_NAME || kind == TOKEN_KEYWORD) {
-    va_list args;
-    va_start(args, kind);
-    token.name = strintern(va_arg(args, const char*));
-    va_end(args);
-  } else if (kind == TOKEN_OPERATOR) {
-    va_list args;
-    va_start(args, kind);
-    token.optype = strintern(va_arg(args, const char*));
-    va_end(args);
-  } else if (kind == TOKEN_SEPARATOR) {
-    va_list args;
-    va_start(args, kind);
-    token.optype = strintern(va_arg(args, const char*));
-    va_end(args);
-  }
+  va_list args;
+  va_start(args, kind);
+  Token token = tokenVarg(1, 1, kind, args);
+  va_end(args);
   return token;
+}
+
+
+static Token tokenLinePos(int line, int pos, TokenKind kind, ...) {
+  va_list args;
+  va_start(args, kind);
+  Token token = tokenVarg(line, pos, kind, args);
+  va_end(args);
+  return token;
+}
+
+
+static TestResult testLineCounting_test() {
+  TestResult result = {};
+  Lexer lexer = newLexer("src", _tests[_currentTest].input);
+  Token* expected = _tests[_currentTest].expected;
+
+  for (size_t i = 0; i < bufLength(expected); i++) {
+    Token token = nextToken(&lexer);
+    TEST(assertEqualToken(i, &token, &expected[i]));
+    TEST(assertEqualInt(token.line, expected[i].line));
+    TEST(assertEqualInt(token.pos, expected[i].pos));
+  }
+
+  _currentTest++;
+  return result;
+}
+
+
+static void testLineCounting(TestSuite* suite) {
+  const char* input = "a + \n b = \n\n c;";
+  char* testName = (char*) malloc(8 + strlen(input) + 1);
+  sprintf(testName, "parse \"%s\"", input);
+
+  _Test t = (_Test){ .name=testName, .input=input, .expected=NULL };
+  bufPush(t.expected, tokenLinePos(1, 1, TOKEN_NAME, "a"));
+  bufPush(t.expected, tokenLinePos(1, 3, TOKEN_OPERATOR, "+"));
+  bufPush(t.expected, tokenLinePos(2, 2, TOKEN_NAME, "b"));
+  bufPush(t.expected, tokenLinePos(2, 4, TOKEN_OPERATOR, "="));
+  bufPush(t.expected, tokenLinePos(4, 2, TOKEN_NAME, "c"));
+  bufPush(t.expected, tokenLinePos(4, 3, TOKEN_SEPARATOR, ";"));
+  bufPush(t.expected, tokenLinePos(4, 4, TOKEN_EOF));
+  bufPush(_tests, t);
+
+  addTest(suite, &testLineCounting_test, testName);
 }
 
 
@@ -157,6 +199,16 @@ TestResult lexer_alltests(PrintLevel verbosity) {
             );
 
   in = " ";
+  createTest(&suite, in, 1,
+             token(TOKEN_EOF)
+            );
+
+  in = "\t";
+  createTest(&suite, in, 1,
+             token(TOKEN_EOF)
+            );
+
+  in = "\n";
   createTest(&suite, in, 1,
              token(TOKEN_EOF)
             );
@@ -234,16 +286,14 @@ TestResult lexer_alltests(PrintLevel verbosity) {
             );
 
   in = "1a";
-  createTest(&suite, in, 3,
-             token(TOKEN_INT, 1),
-             token(TOKEN_NAME, "a"),
+  createTest(&suite, in, 2,
+             token(TOKEN_ERROR),
              token(TOKEN_EOF)
             );
 
   in = "1_a";
-  createTest(&suite, in, 3,
-             token(TOKEN_INT, 1),
-             token(TOKEN_NAME, "_a"),
+  createTest(&suite, in, 2,
+             token(TOKEN_ERROR),
              token(TOKEN_EOF)
             );
 
@@ -251,6 +301,19 @@ TestResult lexer_alltests(PrintLevel verbosity) {
   createTest(&suite, in, 3,
              token(TOKEN_NAME, "a"),
              token(TOKEN_INT, 1),
+             token(TOKEN_EOF)
+            );
+
+  in = "\\ $ # @ ` \" \' ?";
+  createTest(&suite, in, 9,
+             token(TOKEN_ERROR),
+             token(TOKEN_ERROR),
+             token(TOKEN_ERROR),
+             token(TOKEN_ERROR),
+             token(TOKEN_ERROR),
+             token(TOKEN_ERROR),
+             token(TOKEN_ERROR),
+             token(TOKEN_ERROR),
              token(TOKEN_EOF)
             );
 
@@ -386,8 +449,8 @@ TestResult lexer_alltests(PrintLevel verbosity) {
              token(TOKEN_EOF)
             );
 
-  in = "if else do while for switch case continue break return true false bool int var const func struct";
-  createTest(&suite, in, 19,
+  in = "if else do while for switch case";
+  createTest(&suite, in, 8,
              token(TOKEN_KEYWORD, "if"),
              token(TOKEN_KEYWORD, "else"),
              token(TOKEN_KEYWORD, "do"),
@@ -395,12 +458,22 @@ TestResult lexer_alltests(PrintLevel verbosity) {
              token(TOKEN_KEYWORD, "for"),
              token(TOKEN_KEYWORD, "switch"),
              token(TOKEN_KEYWORD, "case"),
+             token(TOKEN_EOF)
+            );
+
+  in = "continue break return true false bool";
+  createTest(&suite, in, 7,
              token(TOKEN_KEYWORD, "continue"),
              token(TOKEN_KEYWORD, "break"),
              token(TOKEN_KEYWORD, "return"),
              token(TOKEN_KEYWORD, "true"),
              token(TOKEN_KEYWORD, "false"),
              token(TOKEN_KEYWORD, "bool"),
+             token(TOKEN_EOF)
+            );
+
+  in = "int var const func struct";
+  createTest(&suite, in, 6,
              token(TOKEN_KEYWORD, "int"),
              token(TOKEN_KEYWORD, "var"),
              token(TOKEN_KEYWORD, "const"),
@@ -562,6 +635,8 @@ TestResult lexer_alltests(PrintLevel verbosity) {
              token(TOKEN_SEPARATOR, ";"),
              token(TOKEN_EOF)
             );
+
+  testLineCounting(&suite);
 
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
