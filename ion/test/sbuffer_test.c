@@ -17,7 +17,7 @@ static TestResult testBufferHeader() {
 
 static TestResult testEmptyBuffer() {
   TestResult result = {};
-  int* buffer = NULL;
+  SBUF(int) buffer = NULL;
   ABORT(assertSame(__bufHeader(buffer), (char*) buffer - sizeof(BufHeader)));
   TEST(assertEqualSize(bufLength(buffer), 0));
   TEST(assertEqualSize(bufCapacity(buffer), 0));
@@ -31,7 +31,7 @@ static TestResult testGrowthOfEmptyBuffer() {
   TestResult result = {};
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     buffer = __bufGrow(buffer, 0, sizeof(int));
     ABORT(assertNotNull(buffer));
     ABORT(assertSame(__bufHeader(buffer), (char*) buffer - sizeof(BufHeader)));
@@ -44,7 +44,7 @@ static TestResult testGrowthOfEmptyBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     buffer = __bufGrow(buffer, 1, sizeof(int));
     ABORT(assertNotNull(buffer));
     TEST(assertEqualSize(bufLength(buffer), 0));
@@ -56,7 +56,7 @@ static TestResult testGrowthOfEmptyBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     srand(time(0));
     int newCapacity = rand() % 100 + 2;
     buffer = __bufGrow(buffer, newCapacity, sizeof(int));
@@ -76,7 +76,7 @@ static TestResult testGrowthOfNonEmptyBuffer() {
   TestResult result = {};
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     buffer = __bufGrow(buffer, 0, sizeof(int));
     buffer = __bufGrow(buffer, 0, sizeof(int));
     TEST(assertEqualSize(bufCapacity(buffer), 2*1 + 1));
@@ -86,7 +86,7 @@ static TestResult testGrowthOfNonEmptyBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     buffer = __bufGrow(buffer, 0, sizeof(int));
     buffer = __bufGrow(buffer, 1, sizeof(int));
     TEST(assertEqualSize(bufCapacity(buffer), 2*1 + 1));
@@ -96,7 +96,7 @@ static TestResult testGrowthOfNonEmptyBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     buffer = __bufGrow(buffer, 1, sizeof(int));
     buffer = __bufGrow(buffer, 0, sizeof(int));
     TEST(assertEqualSize(bufCapacity(buffer), 2*1 + 1));
@@ -106,7 +106,7 @@ static TestResult testGrowthOfNonEmptyBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     buffer = __bufGrow(buffer, 2, sizeof(int));
     buffer = __bufGrow(buffer, 0, sizeof(int));
     TEST(assertEqualSize(bufCapacity(buffer), 2*2 + 1));
@@ -116,7 +116,7 @@ static TestResult testGrowthOfNonEmptyBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     buffer = __bufGrow(buffer, 2, sizeof(int));
     buffer = __bufGrow(buffer, 10, sizeof(int));
     TEST(assertEqualSize(bufCapacity(buffer), 10));
@@ -126,7 +126,7 @@ static TestResult testGrowthOfNonEmptyBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     buffer = __bufGrow(buffer, 2, sizeof(int));
     buffer = __bufGrow(buffer, 10, sizeof(int));
     buffer = __bufGrow(buffer, 10, sizeof(int));
@@ -144,14 +144,14 @@ static TestResult testFitBuffer() {
   TestResult result = {};
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufFit(buffer, 0);
     ABORT(assertNull(buffer));
     TEST(assertEqualSize(bufCapacity(buffer), 0));
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufFit(buffer, 1);
     ABORT(assertNotNull(buffer));
     TEST(assertEqualSize(bufCapacity(buffer), 1));
@@ -159,7 +159,7 @@ static TestResult testFitBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufFit(buffer, 1);
     __bufHeader(buffer)->length = bufCapacity(buffer);
     bufFit(buffer, 0);
@@ -168,7 +168,7 @@ static TestResult testFitBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufFit(buffer, 1);
     __bufHeader(buffer)->length = bufCapacity(buffer);
     bufFit(buffer, 1);
@@ -177,7 +177,7 @@ static TestResult testFitBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufFit(buffer, 1);
     __bufHeader(buffer)->length = bufCapacity(buffer);
     bufFit(buffer, 1);
@@ -188,7 +188,7 @@ static TestResult testFitBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufFit(buffer, 1);
     bufFit(buffer, 4);
     TEST(assertEqualSize(bufCapacity(buffer), 4));
@@ -196,7 +196,7 @@ static TestResult testFitBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufFit(buffer, 2);
     __bufHeader(buffer)->length = bufCapacity(buffer);
     bufFit(buffer, 2);
@@ -212,7 +212,7 @@ static TestResult testPushElements() {
   TestResult result = {};
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufPush(buffer, 42);
     ABORT(assertNotNull(buffer));
     TEST(assertEqualSize(bufLength(buffer), 1));
@@ -224,7 +224,7 @@ static TestResult testPushElements() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufPush(buffer, 42);
     bufPush(buffer, 43);
     TEST(assertEqualSize(bufLength(buffer), 2));
@@ -237,7 +237,7 @@ static TestResult testPushElements() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     for (int i = 0; i < 5; i++) {
       bufPush(buffer, 42+i);
     }
@@ -259,12 +259,12 @@ static TestResult testIteration() {
   TestResult result = {};
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     TEST(assertNull(bufEnd(buffer)));
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufPush(buffer, 42);
     ABORT(assertNotNull(bufEnd(buffer)));
     TEST(assertSame(bufEnd(buffer), buffer+1));
@@ -272,7 +272,7 @@ static TestResult testIteration() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufFit(buffer, 10);
     TEST(assertSame(bufEnd(buffer), buffer));
     __bufHeader(buffer)->length = bufCapacity(buffer);
@@ -281,7 +281,7 @@ static TestResult testIteration() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     for (int i = 0; i < 4; i++) {
       bufPush(buffer, 42+i);
     }
@@ -299,7 +299,7 @@ static TestResult testFreeBuffer() {
   TestResult result = {};
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufFree(buffer);
     TEST(assertNull(buffer));
     TEST(assertEqualSize(bufLength(buffer), 0));
@@ -307,7 +307,7 @@ static TestResult testFreeBuffer() {
   }
 
   {
-    int* buffer = NULL;
+    SBUF(int) buffer = NULL;
     bufPush(buffer, 42);
     ABORT(assertNotNull(buffer));
     bufFree(buffer);

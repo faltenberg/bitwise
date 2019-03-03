@@ -16,8 +16,8 @@ typedef struct _Test {
 } _Test;
 
 
-static _Test* _tests       = NULL;
-static size_t _currentTest = 0;
+static SBUF(_Test) _tests       = NULL;
+static size_t      _currentTest = 0;
 
 
 static void printToken(const Token* token) {

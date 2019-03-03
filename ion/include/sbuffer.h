@@ -1,9 +1,6 @@
 #ifndef __SBUFFER_H__
 #define __SBUFFER_H__
 
-#include <stddef.h>
-#include <stdlib.h>
-
 
 /**
  * Stretchy Buffer
@@ -29,10 +26,11 @@
  * #include "sbuffer.h"
  *
  * int main() {
- *   int* buffer = NULL;   // the NULL assignment is essential!
- *   bufFit(buffer, 10);   // optional: reserves memory for 10 more items
- *                         // now bufCapacity(buffer) - bufLength(buffer) == 10
- *   bufPush(buffer, 42);  // (re-)allocates memory if necessary and stores value at the end
+ *   // expanded to int* buffer = NULL;
+ *   SBUF(int) buffer = NULL;  // the NULL assignment is essential!
+ *   bufFit(buffer, 10);       // optional: reserves memory for 10 more items
+ *                             // now bufCapacity(buffer) - bufLength(buffer) == 10
+ *   bufPush(buffer, 42);      // (re-)allocates memory if necessary and stores value at the end
  *
  *   for (size_t i = 0; i < bufLength(buffer); i++) {  // buffers have a length information
  *     printf("[%d]: %d\n", i, buffer[i]);             // same access as with C arrays
@@ -48,12 +46,18 @@
  */
 
 
+#include <stddef.h>
+#include <stdlib.h>
+
+
 typedef struct BufHeader {
   size_t length;
   size_t capacity;
   char   bytes[0];
 } BufHeader;
 
+
+#define SBUF(x) x*
 
 #define __bufHeader(b) ( (BufHeader*) ((char*) (b) - offsetof(BufHeader, bytes)) )
 

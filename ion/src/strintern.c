@@ -12,7 +12,7 @@ typedef struct String {
 } String;
 
 
-static String* _strings = NULL;
+static SBUF(String) _strings = NULL;
 
 
 const char* strintern(const char* string) {
