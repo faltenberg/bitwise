@@ -8,9 +8,17 @@ The goal is to design a processor and a corresponding software stack. The origin
 hosted on [github](https://github.com/pervognsen/bitwise/).
 
 
-Modules
--------
+Submoudles
+----------
 
-The project is divided into the following modules:
+**NOTE**: this repository uses submodules. Thus, prior before doing anything you must execute
+the following commands so the dependencies are added properly:
 
-- Ion: a simple C-like programming language that will be used to write the software stack
+```sh
+git submodule init
+git submodule update
+```
+
+The project is divided into the following subprojects:
+
+- Ion: a compiler for a simple C-like programming language that will be used for the software stack
