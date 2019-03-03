@@ -37,10 +37,10 @@
  *   }
  *
  *   for (int* it = buffer; it != bufEnd(buffer); it++) {
- *     printf("%d\n", *it);                            // C++ like iteration is possible
+ *     printf("%d\n", *it);  // C++ like iteration is possible
  *   }
  *
- *   bufFree(buffer);      // deallocates the memory and sets buffer to NULL
+ *   bufFree(buffer);  // deallocates the memory and sets buffer to NULL
  * }
  * ```
  */

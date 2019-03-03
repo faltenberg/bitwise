@@ -6,7 +6,12 @@ OPT = ${OPT_DEBUG}
 
 
 .PHONY: all
-all: lib exe
+all: lib exe test_exe
+
+
+.PHONY: clean
+clean:
+	rm -rf bin/
 
 
 .PHONY: run
@@ -14,6 +19,23 @@ run: exe
 	@echo ""
 	@bin/ion
 	@echo "--------------------------------------------------------------------------------"
+
+
+.PHONY: test
+test: test_exe
+	@echo ""
+	@bin/test
+	@echo "--------------------------------------------------------------------------------"
+
+
+.PHONY: test_memleak
+test_memleak: test_exe
+	@echo ""
+	@valgrind --leak-check=full bin/test > /dev/null
+	@echo "--------------------------------------------------------------------------------"
+
+
+######################################## INTERNAL ########################################
 
 
 .PHONY: lib
@@ -26,25 +48,17 @@ exe: deps lib
 	clang ${OPT} -Iinclude/ -Ideps/ -o bin/ion src/*.c
 
 
-.PHONY: test
-test: test_deps lib
+.PHONY: deps
+deps:
+
+
+.PHONY: test_exe
+test_exe: lib test_deps
 	$(eval SRC_FILES := $(filter-out src/ion.c, $(wildcard src/*.c)) )
 	mkdir -p bin/
 	clang ${OPT} -Iinclude/ -Ideps/cunit/include/ -Ldeps/cunit/lib/ -o bin/test test/*.c ${SRC_FILES} -lcunit
-	@echo ""
-	@bin/test
-	@echo "--------------------------------------------------------------------------------"
-
-
-.PHONY: deps
-deps:
 
 
 .PHONY: test_deps
 test_deps:
 	$(MAKE) -C ./deps/cunit/
-
-
-.PHONY: clean
-clean:
-	rm -rf bin/

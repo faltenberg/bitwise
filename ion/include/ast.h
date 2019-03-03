@@ -7,7 +7,30 @@
  * ====================
  *
  * Source code is parsed into an AST for further introspection. The core of the syntax tree is
- * `struct ASTNode` which unites all the various information.
+ * `struct ASTNode` which unites all the various information. `struct Type` holds information about
+ * some type. Like `ASTNode` it uses unions and the fields are meant to be accessed as described
+ * later in the documentation.
+ *
+ *
+ * Node Creation
+ * -------------
+ *
+ * The API defines a bunch of factory functions to create various `ASTNode`s of different kinds.
+ * This simplifies the node creation a lot. Those functions will allocate new nodes on the heap
+ * and should be deleted with the provided `deleteNode()` function.
+ *
+ * ```c
+ * #include "ast.h"
+ * #include <assert.h>
+ *
+ * int main() {
+ *   ASTNode* node = createEmptyNode();
+ *   assert(node != NULL);
+ *   assert(node->kind == NODE_NONE);
+ *   deleteNode(&node);
+ *   assert(node == NULL);
+ * }
+ * ```
  *
  *
  * `struct ASTNode`
@@ -60,6 +83,7 @@
  *   char*          name;
  *   SBUF(ASTNode*) fields;  // will be of kind=NODE_DECL,DECL_FIELD
  * };
+ *
  *
  * struct ASTNode {
  *   NodeKind kind     = NODE_STMT;
@@ -123,6 +147,21 @@
  * };
  *
  * struct ASTNode {
+ *   NodeKind kind     = NODE_STMT;
+ *   StmtKind stmtKind = STMT_SWITCH;
+ *   ASTNode*       expression;  // will be of kind=NODE_EXPR
+ *   SBUF(ASTNode*) cases;       // will be of kind=NODE_STMT,STMT_CASE
+ * };
+ *
+ * struct ASTNode {
+ *   NodeKind kind     = NODE_STMT;
+ *   StmtKind stmtKind = STMT_CASE;
+ *   ASTNode* condition;  // will be of kind=NODE_EXPR
+ *   ASTNode* caseBlock;  // will be of kind=NODE_STMT,STMT_BLOCK
+ * };
+ *
+ *
+ * struct ASTNode {
  *   NodeKind kind     = NODE_EXPR;
  *   StmtKind stmtKind = EXPR_INT;
  *   uint64_t intValue;
@@ -143,14 +182,16 @@
  * struct ASTNode {
  *   NodeKind kind     = NODE_EXPR;
  *   StmtKind stmtKind = EXPR_UNARY;
- *   ASTNode* operand;  // will be of kind=NODE_EXPR
+ *   ASTNode*  operand;  // will be of kind=NODE_EXPR
+ *   TokenKind unop;
  * };
  *
  * struct ASTNode {
  *   NodeKind kind     = NODE_EXPR;
  *   StmtKind stmtKind = EXPR_BINARY;
- *   ASTNode* left;   // will be of kind=NODE_EXPR
- *   ASTNode* right;  // will be of kind=NODE_EXPR
+ *   ASTNode*  left;   // will be of kind=NODE_EXPR
+ *   ASTNode*  right;  // will be of kind=NODE_EXPR
+ *   TokenKind binop;
  * };
  *
  * struct ASTNode {
@@ -229,25 +270,22 @@
 #include <stdbool.h>
 
 #include "sbuffer.h"
+#include "token.h"
 
 
-typedef struct Type      Type;
-typedef struct ASTNode   ASTNode;
-typedef enum   TypeKind  TypeKind;
-typedef enum   NodeKind  NodeKind;
-typedef enum   DeclKind  DeclKind;
-typedef enum   StmtKind  StmtKind;
-typedef enum   ExprKind  ExprKind;
+typedef struct Type    Type;
+typedef struct ASTNode ASTNode;
 
 
-enum NodeKind {
+typedef enum NodeKind {
   NODE_NONE,
   NODE_DECL,
   NODE_STMT,
   NODE_EXPR,
-};
+} NodeKind;
 
-enum DeclKind {
+
+typedef enum DeclKind {
   DECL_NONE,
   DECL_VAR,
   DECL_CONST,
@@ -255,9 +293,10 @@ enum DeclKind {
   DECL_PARAM,
   DECL_STRUCT,
   DECL_FIELD,
-};
+} DeclKind;
 
-enum StmtKind {
+
+typedef enum StmtKind {
   STMT_NONE,
   STMT_BLOCK,
   STMT_EXPR,
@@ -272,9 +311,10 @@ enum StmtKind {
   STMT_FOR,
   STMT_SWITCH,
   STMT_CASE,
-};
+} StmtKind;
 
-enum ExprKind {
+
+typedef enum ExprKind {
   EXPR_NONE,
   EXPR_INT,
   EXPR_BOOL,
@@ -284,9 +324,10 @@ enum ExprKind {
   EXPR_CALL,
   EXPR_INDEX,
   EXPR_FIELD,
-};
+} ExprKind;
 
-enum TypeKind {
+
+typedef enum TypeKind {
   TYPE_NONE,
   TYPE_PRIMITIVE,
   TYPE_FUNC,
@@ -294,7 +335,8 @@ enum TypeKind {
   TYPE_POINTER,
   TYPE_STRUCT,
   TYPE_FIELD,
-};
+} TypeKind;
+
 
 struct Type {
   TypeKind kind;
@@ -344,13 +386,14 @@ struct ASTNode {
         SBUF(ASTNode*) statements;
         SBUF(ASTNode*) cases;
         ASTNode*       lvalue;
+        ASTNode*       caseBlock;
         struct {
           ASTNode* ifBlock;
           ASTNode* elseBlock;
         };
         struct {
-          ASTNode* initDecl;
           ASTNode* loopBody;
+          ASTNode* initDecl;
           ASTNode* postExpr;
         };
       };
@@ -363,12 +406,14 @@ struct ASTNode {
         bool     boolValue;
         char*    nameLiteral;
         struct {
-          ASTNode* left;
-          ASTNode* right;
+          ASTNode*  left;
+          ASTNode*  right;
+          TokenKind binop;
         };
         struct {
           ASTNode* operand;
           union {
+            TokenKind      unop;
             SBUF(ASTNode*) arguments;
             ASTNode*       index;
             char*          fieldName;
@@ -379,6 +424,27 @@ struct ASTNode {
 
   };
 };
+
+
+void deleteNode(ASTNode* *node);
+
+ASTNode* createEmptyNode();
+
+ASTNode* createExprInt(uint64_t value);
+
+ASTNode* createExprBool(bool value);
+
+ASTNode* createExprName(char* name);
+
+ASTNode* createExprUnary(TokenKind op, ASTNode* operand);
+
+ASTNode* createExprBinary(ASTNode* left, TokenKind op, ASTNode* right);
+
+ASTNode* createExprCall(ASTNode* operand, int argCount, ...);
+
+ASTNode* createExprIndex(ASTNode* operand, ASTNode* index);
+
+ASTNode* createExprField(ASTNode* operand, char* fieldName);
 
 
 #endif  // __AST_H__
