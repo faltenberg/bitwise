@@ -1,4 +1,4 @@
-#include "cunit/cunit.h"
+#include "cunit.h"
 
 #include <stdio.h>
 

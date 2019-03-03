@@ -1,6 +1,3 @@
-#include "cunit.h"
-
-
 /**
  * Example
  * -------
@@ -29,9 +26,12 @@
  */
 
 
+#include "cunit.h"
+
+
 static TestResult simpleTest() {
   TestResult result = {};
-  apply(&result, assertEqualInt(13, 42));
+  apply(&result, assertEqualInt(42, 42));
   return result;
 }
 

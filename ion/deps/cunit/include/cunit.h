@@ -27,7 +27,7 @@ typedef struct Test {
 
 
 typedef enum PrintLevel {
-  SILENT, SPARSE, VERBOSE
+  SILENT, SUMMARY, SPARSE, VERBOSE
 } PrintLevel;
 
 void printVerbose(const char* format, ...);

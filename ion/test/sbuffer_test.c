@@ -1,4 +1,5 @@
-#include "cunit/cunit.h"
+#include "cunit.h"
+
 #include "sbuffer.h"
 
 #include <stdlib.h>

@@ -11,27 +11,38 @@ all: lib exe
 
 .PHONY: run
 run: exe
+	@echo ""
 	@bin/ion
 	@echo "--------------------------------------------------------------------------------"
 
 
 .PHONY: lib
-lib:
+lib: deps
 
 
 .PHONY: exe
-exe: lib
+exe: deps lib
 	mkdir -p bin/
 	clang ${OPT} -Iinclude/ -Ideps/ -o bin/ion src/*.c
 
 
 .PHONY: test
-test: lib
+test: test_deps lib
 	$(eval SRC_FILES := $(filter-out src/ion.c, $(wildcard src/*.c)) )
 	mkdir -p bin/
-	clang ${OPT} -Iinclude/ -Ideps/ -Ldeps/cunit/ -o bin/test test/*.c ${SRC_FILES} -lcunit
+	clang ${OPT} -Iinclude/ -Ideps/cunit/include/ -Ldeps/cunit/lib/ -o bin/test test/*.c ${SRC_FILES} -lcunit
+	@echo ""
 	@bin/test
 	@echo "--------------------------------------------------------------------------------"
+
+
+.PHONY: deps
+deps:
+
+
+.PHONY: test_deps
+test_deps:
+	$(MAKE) -C ./deps/cunit/
 
 
 .PHONY: clean
