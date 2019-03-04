@@ -19,7 +19,7 @@ void printType(const Type* type) {
     case TYPE_NONE:
       printf("(none)");
       break;
-    case TYPE_PRIMITIVE:
+    case TYPE_NAME:
       printf("%s", type->name);
       break;
     case TYPE_FUNC:
@@ -27,7 +27,7 @@ void printType(const Type* type) {
       for (int i = 0; i < bufLength(type->paramTypes); i++) {
         printType(type->paramTypes[i]);
         if (i < bufLength(type->paramTypes) - 1) {
-          printf(", ");
+          printf(" ");
         }
       }
       printf(") -> ");
@@ -51,11 +51,6 @@ void printType(const Type* type) {
         printf(" ");
       }
       printf("})");
-      break;
-    case TYPE_FIELD:
-      printf("%s: ", type->name);
-      printType(type->baseType);
-      printf(";");
       break;
   }
 }

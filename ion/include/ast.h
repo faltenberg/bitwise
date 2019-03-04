@@ -230,7 +230,7 @@
  * };
  *
  * struct Type {
- *   TypeKind kind = TYPE_PRIMITIVE;
+ *   TypeKind kind = TYPE_NAME;
  *   char* name;
  * };
  *
@@ -254,13 +254,7 @@
  * struct Type {
  *   TypeKind kind = TYPE_STRUCT;
  *   char*       name;
- *   SBUF(Type*) fieldTypes;  // will be of kind=TYPE_FIELD
- * };
- *
- * struct Type {
- *   TypeKind kind = TYPE_FIELD;
- *   char* name;
- *   Type* baseType;
+ *   SBUF(Type*) fieldTypes;
  * };
  * ```
  */
@@ -329,26 +323,29 @@ typedef enum ExprKind {
 
 typedef enum TypeKind {
   TYPE_NONE,
-  TYPE_PRIMITIVE,
+  TYPE_NAME,
   TYPE_FUNC,
   TYPE_ARRAY,
   TYPE_POINTER,
   TYPE_STRUCT,
-  TYPE_FIELD,
 } TypeKind;
 
 
 struct Type {
   TypeKind kind;
-  char* name;
   union {
-    Type* baseType;
-    Type* returnType;
-  };
-  union {
-    uint64_t    arraySize;
-    SBUF(Type*) fieldTypes;
-    SBUF(Type*) paramTypes;
+    struct {
+      char*       name;
+      SBUF(Type*) fieldTypes;
+    };
+    struct {
+      SBUF(Type*) paramTypes;
+      Type*       returnType;
+    };
+    struct {
+      Type*    baseType;
+      uint64_t arraySize;
+    };
   };
 };
 
