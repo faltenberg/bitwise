@@ -422,7 +422,7 @@ struct ASTNode {
 };
 
 
-void deleteNode(ASTNode* *node);
+void deleteNode(ASTNode* node);
 
 ASTNode* createEmptyNode();
 
@@ -442,9 +442,20 @@ ASTNode* createExprIndex(ASTNode* operand, ASTNode* index);
 
 ASTNode* createExprField(ASTNode* operand, char* fieldName);
 
-void printAST(const ASTNode* node);
 
-void printlnAST(const ASTNode* node);
+void deleteType(Type* type);
+
+Type* createTypeNone();
+
+Type* createTypeName(char* name);
+
+Type* createTypePointer(Type* baseType);
+
+Type* createTypeArray(Type* baseType, uint64_t size);
+
+Type* createTypeFunc(Type* returnType, int paramCount, ...);
+
+Type* createTypeStruct(char* name, int fieldCount, ...);
 
 
 #endif  // __AST_H__
