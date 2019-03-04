@@ -9,6 +9,9 @@ typedef enum TokenKind {
   TOKEN_OP_INC,
   TOKEN_OP_SUB,
   TOKEN_OP_DEC,
+  TOKEN_OP_MUL,
+  TOKEN_OP_DIV,
+  TOKEN_OP_MOD,
 } TokenKind;
 
 

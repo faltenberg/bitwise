@@ -1,6 +1,7 @@
 #include "ast.h"
 
 #include <stdarg.h>
+#include <stdio.h>
 
 
 void deleteNode(ASTNode* *node) {
@@ -116,6 +117,20 @@ void deleteNode(ASTNode* *node) {
 static ASTNode* createNode(NodeKind kind) {
   ASTNode* node = (ASTNode*) calloc(1, sizeof(ASTNode));
   node->kind = kind;
+  return node;
+}
+
+
+static ASTNode* createDeclNode(DeclKind kind) {
+  ASTNode* node = createNode(NODE_DECL);
+  node->declKind = kind;
+  return node;
+}
+
+
+static ASTNode* createStmtNode(StmtKind kind) {
+  ASTNode* node = createNode(NODE_STMT);
+  node->stmtKind = kind;
   return node;
 }
 

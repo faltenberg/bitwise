@@ -242,13 +242,13 @@
  *
  * struct Type {
  *   TypeKind kind = TYPE_ARRAY;
- *   Type* type;
- *   Type* indexType;
+ *   Type*    baseType;
+ *   uint64_t arraySize;
  * };
  *
  * struct Type {
  *   TypeKind kind = TYPE_POINTER;
- *   Type* refType;
+ *   Type* baseType;
  * };
  *
  * struct Type {
@@ -260,7 +260,7 @@
  * struct Type {
  *   TypeKind kind = TYPE_FIELD;
  *   char* name;
- *   Type* type;
+ *   Type* baseType;
  * };
  * ```
  */
@@ -342,12 +342,11 @@ struct Type {
   TypeKind kind;
   char* name;
   union {
-    Type* type;
-    Type* refType;
+    Type* baseType;
     Type* returnType;
   };
   union {
-    Type*       indexType;
+    uint64_t    arraySize;
     SBUF(Type*) fieldTypes;
     SBUF(Type*) paramTypes;
   };
@@ -445,6 +444,10 @@ ASTNode* createExprCall(ASTNode* operand, int argCount, ...);
 ASTNode* createExprIndex(ASTNode* operand, ASTNode* index);
 
 ASTNode* createExprField(ASTNode* operand, char* fieldName);
+
+void printAST(const ASTNode* node);
+
+void printlnAST(const ASTNode* node);
 
 
 #endif  // __AST_H__
