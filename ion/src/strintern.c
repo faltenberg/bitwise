@@ -7,8 +7,8 @@
 
 
 typedef struct String {
-  size_t      length;
-  const char* chars;
+  size_t length;
+  char*  chars;
 } String;
 
 
@@ -23,12 +23,14 @@ const char* strintern(const char* string) {
 const char* strinternRange(const char* start, const char* end) {
   size_t length = end - start;
 
+  // return already interned string if possible
   for (String* s = _strings; s != bufEnd(_strings); s++) {
     if (length == s->length && strncmp(start, s->chars, length) == 0) {
       return s->chars;
     }
   }
 
+  // store a copy of provided string and return the address
   char* chars = (char*) malloc((length + 1) * sizeof(char));
   memcpy(chars, start, length);
   chars[length] = '\0';

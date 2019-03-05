@@ -238,16 +238,17 @@ static TestResult testPushElements() {
   }
 
   {
+    size_t size = 20;
     SBUF(int) buffer = NULL;
-    for (int i = 0; i < 5; i++) {
-      bufPush(buffer, 42+i);
+    for (int i = 0; i < size; i++) {
+      bufPush(buffer, i);
     }
-    TEST(assertEqualSize(bufLength(buffer), 5));
-    TEST(assertEqualSize(bufCapacity(buffer), 2*3 + 1));
-    TEST(assertTrue(__bufFits(buffer, 2)));
-    TEST(assertFalse(__bufFits(buffer, 3)));
+    TEST(assertEqualSize(bufLength(buffer), size));
+    TEST(assertEqualInt(bufCapacity(buffer), 2*(2*(2*(2*1+1)+1)+1)+1));
+    TEST(assertTrue(__bufFits(buffer, 11)));
+    TEST(assertFalse(__bufFits(buffer, 12)));
     for (size_t i = 0; i < bufLength(buffer); i++) {
-      TEST(assertEqualInt(buffer[i], 42+i));
+      TEST(assertEqualInt(buffer[i], i));
     }
     bufFree(buffer);
   }

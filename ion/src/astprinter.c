@@ -8,6 +8,15 @@ static void printBlock(const ASTNode* block);
 static void printStmt(const ASTNode* stmt);
 static void printDecl(const ASTNode* decl);
 
+static int intend = 0;
+
+static void newLine() {
+  printf("\n");
+  for (int i = 0; i < intend; i++) {
+     printf(".  ");
+  }
+}
+
 
 void printlnType(const Type* type) {
   printType(type);
@@ -124,6 +133,12 @@ static const char* optoa(TokenKind op) {
       return "==";
     case TOKEN_OP_CMP_NEQ:
       return "!=";
+    case TOKEN_OP_LSL:
+      return "<<";
+    case TOKEN_OP_LSR:
+      return ">>";
+    case TOKEN_OP_ASR:
+      return ">>>";
     default:
       return "op<>";
   }
@@ -177,16 +192,6 @@ static void printExpr(const ASTNode* expr) {
       printAST(expr->operand);
       printf(" %s)", expr->fieldName);
       break;
-  }
-}
-
-
-static int intend = 0;
-
-static void newLine() {
-  printf("\n");
-  for (int i = 0; i < intend; i++) {
-     printf(".  ");
   }
 }
 

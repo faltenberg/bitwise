@@ -18,6 +18,9 @@ typedef enum TokenKind {
   TOKEN_OP_CMP_GEQ,
   TOKEN_OP_CMP_EQ,
   TOKEN_OP_CMP_NEQ,
+  TOKEN_OP_LSL,
+  TOKEN_OP_LSR,
+  TOKEN_OP_ASR,
 } TokenKind;
 
 
