@@ -460,6 +460,8 @@ ASTNode* createExprIndex(ASTNode* operand, ASTNode* index);
 ASTNode* createExprField(ASTNode* operand, char* fieldName);
 
 
+ASTNode* createStmtEmpty();
+
 ASTNode* createStmtBlock(int stmtCount, ...);
 
 ASTNode* createStmtExpr(ASTNode* expression);
