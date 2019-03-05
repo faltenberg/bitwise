@@ -12,6 +12,12 @@ typedef enum TokenKind {
   TOKEN_OP_MUL,
   TOKEN_OP_DIV,
   TOKEN_OP_MOD,
+  TOKEN_OP_CMP_LT,
+  TOKEN_OP_CMP_LEQ,
+  TOKEN_OP_CMP_GT,
+  TOKEN_OP_CMP_GEQ,
+  TOKEN_OP_CMP_EQ,
+  TOKEN_OP_CMP_NEQ,
 } TokenKind;
 
 
