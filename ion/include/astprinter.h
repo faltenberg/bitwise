@@ -1,7 +1,6 @@
 #ifndef __ASTPRINTER_H__
 #define __ASTPRINTER_H__
 
-#include "ast.h"
 
 /**
  * AST Printer
@@ -23,6 +22,9 @@
  * }
  * ```
  */
+
+
+#include "ast.h"
 
 
 void printAST(const ASTNode* node);
