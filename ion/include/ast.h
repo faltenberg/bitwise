@@ -54,11 +54,23 @@
  * };
  *
  * struct ASTNode {
+ *   NodeKind kind = NODE_ERROR;
+ *   char*    errorMessage;
+ * };
+ *
+ * struct ASTNode {
  *   NodeKind kind     = NODE_DECL;
  *   DeclKind declKind = DECL_VAR | DECL_CONST;
  *   char*    name;
  *   Type*    type;
  *   ASTNode* initValue;  // will be of kind=NODE_EXPR
+ * };
+ *
+ * struct ASTNode {
+ *   NodeKind kind     = NODE_DECL;
+ *   DeclKind declKind = DECL_STRUCT;
+ *   char*          name;
+ *   SBUF(ASTNode*) fields;  // will be of kind=NODE_DECL,DECL_FIELD
  * };
  *
  * struct ASTNode {
@@ -77,13 +89,11 @@
  *   ASTNode*       funcBlock;   // will be of kind=NODE_STMT,STMT_BLOCK
  * };
  *
- * struct ASTNode {
- *   NodeKind kind     = NODE_DECL;
- *   DeclKind declKind = DECL_STRUCT;
- *   char*          name;
- *   SBUF(ASTNode*) fields;  // will be of kind=NODE_DECL,DECL_FIELD
- * };
  *
+ * struct ASTNode {
+ *   NodeKind kind     = NODE_STMT;
+ *   StmtKind stmtKind = STMT_NONE;
+ * };
  *
  * struct ASTNode {
  *   NodeKind kind     = NODE_STMT;
@@ -93,13 +103,14 @@
  *
  * struct ASTNode {
  *   NodeKind kind     = NODE_STMT;
- *   StmtKind stmtKind = STMT_BREAK | STMT_CONTINUE;
+ *   StmtKind stmtKind = STMT_EXPR;
+ *   ASTNode* expression;  // will be of kind=NODE_EXPR
  * };
  *
  * struct ASTNode {
  *   NodeKind kind     = NODE_STMT;
- *   StmtKind stmtKind = STMT_EXPR | STMT_RETURN;
- *   ASTNode* expression;  // will be of kind=NODE_EXPR
+ *   StmtKind stmtKind = STMT_RETURN;
+ *   ASTNode* expression;  // will be of kind=NODE_EXPR|NODE_NONE
  * };
  *
  * struct ASTNode {
@@ -111,17 +122,10 @@
  *
  * struct ASTNode {
  *   NodeKind kind     = NODE_STMT;
- *   StmtKind stmtKind = STMT_ASSIGN;
- *   ASTNode* lvalue;      // will be of kind=NODE_EXPR
- *   ASTNode* expression;  // will be of kind=NODE_EXPR
- * };
- *
- * struct ASTNode {
- *   NodeKind kind     = NODE_STMT;
- *   StmtKind stmtKind = STMT_IF;
+ *   StmtKind stmtKind = STMT_IF|STMT_ELSEIF;
  *   ASTNode* condition;  // will be of kind=NODE_EXPR
  *   ASTNode* ifBlock;    // will be of kind=NODE_STMT,STMT_BLOCK
- *   ASTNode* elseBlock;  // will be of kind=NODE_STMT,STMT_ELSE|STMT_IF
+ *   ASTNode* elseBlock;  // will be of kind=NODE_STMT,STMT_ELSE|STMT_ELSEIF
  * };
  *
  * struct ASTNode {
@@ -148,9 +152,14 @@
  *
  * struct ASTNode {
  *   NodeKind kind     = NODE_STMT;
+ *   StmtKind stmtKind = STMT_BREAK | STMT_CONTINUE;
+ * };
+ *
+ * struct ASTNode {
+ *   NodeKind kind     = NODE_STMT;
  *   StmtKind stmtKind = STMT_SWITCH;
  *   ASTNode*       expression;  // will be of kind=NODE_EXPR
- *   SBUF(ASTNode*) cases;       // will be of kind=NODE_STMT,STMT_CASE
+ *   SBUF(ASTNode*) cases;       // will be of kind=NODE_STMT,STMT_CASE|STMT_ELSE
  * };
  *
  * struct ASTNode {
@@ -235,12 +244,6 @@
  * };
  *
  * struct Type {
- *   TypeKind kind = TYPE_FUNC;
- *   SBUF(Type*) paramTypes;
- *   Type*       returnType;
- * };
- *
- * struct Type {
  *   TypeKind kind = TYPE_ARRAY;
  *   Type*    baseType;
  *   uint64_t arraySize;
@@ -255,6 +258,12 @@
  *   TypeKind kind = TYPE_STRUCT;
  *   char*       name;
  *   SBUF(Type*) fieldTypes;
+ * };
+ *
+ * struct Type {
+ *   TypeKind kind = TYPE_FUNC;
+ *   SBUF(Type*) paramTypes;
+ *   Type*       returnType;
  * };
  * ```
  */
@@ -276,6 +285,7 @@ typedef enum NodeKind {
   NODE_DECL,
   NODE_STMT,
   NODE_EXPR,
+  NODE_ERROR,
 } NodeKind;
 
 
@@ -283,10 +293,10 @@ typedef enum DeclKind {
   DECL_NONE,
   DECL_VAR,
   DECL_CONST,
-  DECL_FUNC,
-  DECL_PARAM,
   DECL_STRUCT,
   DECL_FIELD,
+  DECL_FUNC,
+  DECL_PARAM,
 } DeclKind;
 
 
@@ -294,11 +304,12 @@ typedef enum StmtKind {
   STMT_NONE,
   STMT_BLOCK,
   STMT_EXPR,
-  STMT_ASSIGN,
-  STMT_CONTINUE,
-  STMT_BREAK,
   STMT_RETURN,
+  STMT_ASSIGN,
+  STMT_BREAK,
+  STMT_CONTINUE,
   STMT_IF,
+  STMT_ELSEIF,
   STMT_ELSE,
   STMT_WHILE,
   STMT_DOWHILE,
@@ -354,6 +365,9 @@ struct ASTNode {
   NodeKind kind;
 
   union {
+    struct {
+      char* errorMessage;
+    };
 
     struct {
       DeclKind declKind;
@@ -426,6 +440,9 @@ void deleteNode(ASTNode* node);
 
 ASTNode* createEmptyNode();
 
+ASTNode* createErrorNode(char* errorMessage);
+
+
 ASTNode* createExprInt(uint64_t value);
 
 ASTNode* createExprBool(bool value);
@@ -441,6 +458,48 @@ ASTNode* createExprCall(ASTNode* operand, int argCount, ...);
 ASTNode* createExprIndex(ASTNode* operand, ASTNode* index);
 
 ASTNode* createExprField(ASTNode* operand, char* fieldName);
+
+
+ASTNode* createStmtBlock(int stmtCount, ...);
+
+ASTNode* createStmtExpr(ASTNode* expression);
+
+ASTNode* createStmtReturn(ASTNode* expression);
+
+ASTNode* createStmtAssign(ASTNode* lvalue, ASTNode* expression);
+
+ASTNode* createStmtIf(ASTNode* condition, ASTNode* ifBlock, ASTNode* elseBlock);
+
+ASTNode* createStmtElseIf(ASTNode* condition, ASTNode* ifBlock, ASTNode* elseBlock);
+
+ASTNode* createStmtElse(int stmtCount, ...);
+
+ASTNode* createStmtWhile(ASTNode* condition, ASTNode* loopBody);
+
+ASTNode* createStmtDoWhile(ASTNode* condition, ASTNode* loopBody);
+
+ASTNode* createStmtFor(ASTNode* initDecl, ASTNode* condition, ASTNode* postExpr, ASTNode* loopBody);
+
+ASTNode* createStmtBreak();
+
+ASTNode* createStmtContinue();
+
+ASTNode* createStmtSwitch(ASTNode* expression, int caseCount, ...);
+
+ASTNode* createStmtCase(ASTNode* condition, ASTNode* caseBlock);
+
+
+ASTNode* createDeclVar(char* name, Type* type, ASTNode* initValue);
+
+ASTNode* createDeclConst(char* name, Type* type, ASTNode* initValue);
+
+ASTNode* createDeclStruct(char* name, int fieldCount, ...);
+
+ASTNode* createDeclField(char* name, Type* type);
+
+ASTNode* createDeclFunc(char* name, ASTNode* funcBlock, Type* returnType, int paramCount, ...);
+
+ASTNode* createDeclParam(char* name, Type* type);
 
 
 void deleteType(Type* type);
