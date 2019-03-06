@@ -390,15 +390,33 @@ static TestResult testCreateStmtReturn() {
 
 static TestResult testCreateStmtAssign() {
   TestResult result = {};
-  ASTNode* node = createStmtAssign(createExprName("x"), createExprInt(2));
-  ABORT(assertNotNull(node));
-  TEST(assertEqualInt(node->kind, NODE_STMT));
-  TEST(assertEqualInt(node->stmtKind, STMT_ASSIGN));
-  ABORT(assertNotNull(node->lvalue));
-  TEST(assertEqualInt(node->lvalue->kind, NODE_EXPR));
-  ABORT(assertNotNull(node->expression));
-  TEST(assertEqualInt(node->expression->kind, NODE_EXPR));
-  deleteNode(node);
+
+  {
+    ASTNode* node = createStmtAssign(createExprName("x"), createExprInt(2));
+    ABORT(assertNotNull(node));
+    TEST(assertEqualInt(node->kind, NODE_STMT));
+    TEST(assertEqualInt(node->stmtKind, STMT_ASSIGN));
+    ABORT(assertNotNull(node->lvalue));
+    TEST(assertEqualInt(node->lvalue->kind, NODE_EXPR));
+    TEST(assertEqualInt(node->opkind, TOKEN_ASSIGN));
+    ABORT(assertNotNull(node->expression));
+    TEST(assertEqualInt(node->expression->kind, NODE_EXPR));
+    deleteNode(node);
+  }
+
+  {
+    ASTNode* node = createStmtAssignOp(createExprName("x"), TOKEN_ASSIGN_ADD, createExprInt(2));
+    ABORT(assertNotNull(node));
+    TEST(assertEqualInt(node->kind, NODE_STMT));
+    TEST(assertEqualInt(node->stmtKind, STMT_ASSIGN));
+    ABORT(assertNotNull(node->lvalue));
+    TEST(assertEqualInt(node->lvalue->kind, NODE_EXPR));
+    TEST(assertEqualInt(node->opkind, TOKEN_ASSIGN_ADD));
+    ABORT(assertNotNull(node->expression));
+    TEST(assertEqualInt(node->expression->kind, NODE_EXPR));
+    deleteNode(node);
+  }
+
   return result;
 }
 
@@ -488,7 +506,8 @@ static TestResult testCreateStmtDoWhile() {
 static TestResult testCreateStmtFor() {
   TestResult result = {};
   ASTNode* node = createStmtFor(createDeclVar("i", createTypeName("int"), 0), createExprBool(true),
-                        createExprUnary(TOKEN_OP_INC, createExprName("i")), createStmtBlock(0));
+                        createStmtExpr(createExprUnary(TOKEN_OP_INC, createExprName("i"))),
+                        createStmtBlock(0));
   ABORT(assertNotNull(node));
   TEST(assertEqualInt(node->kind, NODE_STMT));
   TEST(assertEqualInt(node->stmtKind, STMT_FOR));
@@ -496,8 +515,9 @@ static TestResult testCreateStmtFor() {
   TEST(assertEqualInt(node->initDecl->kind, NODE_DECL));
   ABORT(assertNotNull(node->condition));
   TEST(assertEqualInt(node->condition->kind, NODE_EXPR));
-  ABORT(assertNotNull(node->postExpr));
-  TEST(assertEqualInt(node->postExpr->kind, NODE_EXPR));
+  ABORT(assertNotNull(node->postStmt));
+  TEST(assertEqualInt(node->postStmt->kind, NODE_STMT));
+  TEST(assertEqualInt(node->postStmt->stmtKind, STMT_EXPR));
   ABORT(assertNotNull(node->loopBody));
   TEST(assertEqualInt(node->loopBody->kind, NODE_STMT));
   TEST(assertEqualInt(node->loopBody->stmtKind, STMT_BLOCK));

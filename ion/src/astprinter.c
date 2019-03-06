@@ -139,6 +139,48 @@ static const char* optoa(TokenKind op) {
       return ">>";
     case TOKEN_OP_ASR:
       return ">>>";
+    case TOKEN_OP_AND:
+      return "&";
+    case TOKEN_OP_ANDAND:
+      return "&&";
+    case TOKEN_OP_OR:
+      return "|";
+    case TOKEN_OP_OROR:
+      return "||";
+    case TOKEN_OP_XOR:
+      return "^";
+    case TOKEN_OP_NOT:
+      return "!";
+    case TOKEN_OP_NEG:
+      return "~";
+    case TOKEN_ASSIGN:
+      return "=";
+    case TOKEN_ASSIGN_ADD:
+      return "+=";
+    case TOKEN_ASSIGN_SUB:
+      return "-=";
+    case TOKEN_ASSIGN_MUL:
+      return "*=";
+    case TOKEN_ASSIGN_DIV:
+      return "/=";
+    case TOKEN_ASSIGN_MOD:
+      return "%=";
+    case TOKEN_ASSIGN_LSL:
+      return "<<=";
+    case TOKEN_ASSIGN_LSR:
+      return ">>=";
+    case TOKEN_ASSIGN_ASR:
+      return ">>>=";
+    case TOKEN_ASSIGN_AND:
+      return "&=";
+    case TOKEN_ASSIGN_OR:
+      return "|=";
+    case TOKEN_ASSIGN_XOR:
+      return "^=";
+    case TOKEN_ASSIGN_NOT:
+      return "!=";
+    case TOKEN_ASSIGN_NEG:
+      return "~=";
     default:
       return "op<>";
   }
@@ -230,7 +272,7 @@ static void printStmt(const ASTNode* stmt) {
       printf(")");
       break;
     case STMT_ASSIGN:
-      printf("(= ");
+      printf("(%s ", optoa(stmt->opkind));
       printExpr(stmt->lvalue);
       printf(" ");
       printExpr(stmt->expression);
@@ -301,7 +343,7 @@ static void printStmt(const ASTNode* stmt) {
       printf(" ");
       printExpr(stmt->condition);
       printf(" ");
-      printExpr(stmt->postExpr);
+      printStmt(stmt->postStmt);
       ++intend;
       newLine();
       printBlock(stmt->loopBody);

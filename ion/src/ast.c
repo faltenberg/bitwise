@@ -213,6 +213,15 @@ ASTNode* createStmtReturn(ASTNode* expression) {
 ASTNode* createStmtAssign(ASTNode* lvalue, ASTNode* expression) {
   ASTNode* node = createStmtNode(STMT_ASSIGN);
   node->lvalue = lvalue;
+  node->opkind = TOKEN_ASSIGN;
+  node->expression = expression;
+  return node;
+}
+
+ASTNode* createStmtAssignOp(ASTNode* lvalue, TokenKind opkind, ASTNode* expression) {
+  ASTNode* node = createStmtNode(STMT_ASSIGN);
+  node->lvalue = lvalue;
+  node->opkind = opkind;
   node->expression = expression;
   return node;
 }
@@ -268,11 +277,11 @@ ASTNode* createStmtDoWhile(ASTNode* condition, ASTNode* loopBody) {
 }
 
 
-ASTNode* createStmtFor(ASTNode* initDecl, ASTNode* condition, ASTNode* postExpr, ASTNode* loopBody) {
+ASTNode* createStmtFor(ASTNode* initDecl, ASTNode* condition, ASTNode* postStmt, ASTNode* loopBody) {
   ASTNode* node = createStmtNode(STMT_FOR);
   node->initDecl = initDecl;
   node->condition = condition;
-  node->postExpr = postExpr;
+  node->postStmt = postStmt;
   node->loopBody = loopBody;
   return node;
 }
@@ -489,7 +498,7 @@ void deleteNode(ASTNode* node) {
           break;
         case STMT_FOR:
           deleteNode(node->initDecl);
-          deleteNode(node->postExpr);
+          deleteNode(node->postStmt);
         case STMT_WHILE:
         case STMT_DOWHILE:
           deleteNode(node->condition);

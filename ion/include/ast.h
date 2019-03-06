@@ -19,7 +19,7 @@
  * This simplifies the node creation a lot. Those functions will allocate new nodes on the heap
  * and should be deleted with the provided `deleteNode()` function.
  *
- * ```c
+ * ```c {.line-numbers}
  * #include "ast.h"
  * #include <assert.h>
  *
@@ -48,7 +48,7 @@
  *
  * `ASTNode` looks as follows for the various `NodeKind`s:
  *
- * ```c
+ * ```c {.line-numbers}
  * struct ASTNode {
  *   NodeKind kind = NODE_NONE;
  * };
@@ -116,8 +116,9 @@
  * struct ASTNode {
  *   NodeKind kind     = NODE_STMT;
  *   StmtKind stmtKind = STMT_ASSIGN;
- *   ASTNode* lvalue;      // will be of kind=NODE_EXPR
- *   ASTNode* expression;  // will be of kind=NODE_EXPR
+ *   ASTNode*  lvalue;      // will be of kind=NODE_EXPR
+ *   TokenKind opkind;      // will be of kind=TOKEN_ASSIGN_XYZ;
+ *   ASTNode*  expression;  // will be of kind=NODE_EXPR
  * };
  *
  * struct ASTNode {
@@ -147,7 +148,7 @@
  *   ASTNode* initDecl;   // will be of kind=NODE_DECL,DECL_VAR
  *   ASTNode* condition;  // will be of kind=NODE_EXPR
  *   ASTNode* loopBody;   // will be of kind=NODE_STMT,STMT_BLOCK
- *   ASTNode* postExpr;   // will be of kind=NODE_EXPR
+ *   ASTNode* postStmt;   // will be of kind=NODE_STMT
  * };
  *
  * struct ASTNode {
@@ -233,7 +234,7 @@
  * various different type kinds in one single unit. `Type` looks as follows for the various
  * `TypeKind`s:
  *
- * ```c
+ * ```c {.line-numbers}
  * struct Type {
  *   TypeKind kind = TYPE_NONE;
  * };
@@ -395,8 +396,11 @@ struct ASTNode {
       union {
         SBUF(ASTNode*) statements;
         SBUF(ASTNode*) cases;
-        ASTNode*       lvalue;
         ASTNode*       caseBlock;
+        struct {
+          ASTNode*  lvalue;
+          TokenKind opkind;
+        };
         struct {
           ASTNode* ifBlock;
           ASTNode* elseBlock;
@@ -404,7 +408,7 @@ struct ASTNode {
         struct {
           ASTNode* loopBody;
           ASTNode* initDecl;
-          ASTNode* postExpr;
+          ASTNode* postStmt;
         };
       };
     };
@@ -470,6 +474,8 @@ ASTNode* createStmtReturn(ASTNode* expression);
 
 ASTNode* createStmtAssign(ASTNode* lvalue, ASTNode* expression);
 
+ASTNode* createStmtAssignOp(ASTNode* lvalue, TokenKind opkind, ASTNode* expression);
+
 ASTNode* createStmtIf(ASTNode* condition, ASTNode* ifBlock, ASTNode* elseBlock);
 
 ASTNode* createStmtElseIf(ASTNode* condition, ASTNode* ifBlock, ASTNode* elseBlock);
@@ -480,7 +486,7 @@ ASTNode* createStmtWhile(ASTNode* condition, ASTNode* loopBody);
 
 ASTNode* createStmtDoWhile(ASTNode* condition, ASTNode* loopBody);
 
-ASTNode* createStmtFor(ASTNode* initDecl, ASTNode* condition, ASTNode* postExpr, ASTNode* loopBody);
+ASTNode* createStmtFor(ASTNode* initDecl, ASTNode* condition, ASTNode* postStmt, ASTNode* loopBody);
 
 ASTNode* createStmtBreak();
 
