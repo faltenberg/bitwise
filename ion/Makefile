@@ -1,8 +1,8 @@
 OPT_DEBUG = -O0 -g -Wall
 OPT_RELEASE = -O3
 
-OPT = ${OPT_DEBUG}
-#OPT = ${OPT_RELEASE}
+#OPT = ${OPT_DEBUG}
+OPT = ${OPT_RELEASE}
 
 
 .PHONY: all
@@ -17,7 +17,7 @@ clean:
 .PHONY: run
 run: exe
 	@echo ""
-	@bin/ion
+	@bin/ion example/demo.ion
 	@echo "--------------------------------------------------------------------------------"
 
 
