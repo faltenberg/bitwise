@@ -70,9 +70,9 @@
  * to access the buffer data. It doesn't count into `sizeof(BufHeader)` as its size is `0` and is
  * only increased during runtime.
  *
- * **field:** `length` - the current length of the buffer
- * **field:** `capacity` - the capacity of the buffer
- * **field:** `bytes` - the buffer data
+ * - **field:** `length` - the current length of the buffer
+ * - **field:** `capacity` - the capacity of the buffer
+ * - **field:** `bytes` - the buffer data
  */
 typedef struct BufHeader {
   size_t length;

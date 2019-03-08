@@ -4,17 +4,15 @@
 
 
 extern TestResult sbuffer_alltests(PrintLevel);
+extern TestResult str_alltests(PrintLevel);
 extern TestResult strintern_alltests(PrintLevel);
-extern TestResult lexer_alltests(PrintLevel);
-extern TestResult ast_alltests(PrintLevel);
 
 
 int main() {
   TestResult result = {};
   result = unite(result, sbuffer_alltests(SPARSE));
+  result = unite(result, str_alltests(SPARSE));
   result = unite(result, strintern_alltests(SPARSE));
-  result = unite(result, ast_alltests(SPARSE));
-  result = unite(result, lexer_alltests(SUMMARY));
-  printf("Result: %d of %d tests failed\n", result.failedTests, result.totalTests);
+  printResult(result);
   return 0;
 }

@@ -293,6 +293,21 @@ static TestResult testIteration() {
     bufFree(buffer);
   }
 
+  {
+    SBUF(char*) buffer = NULL;
+    bufPush(buffer, "foo");
+    bufPush(buffer, "bar");
+    bufPush(buffer, "baz");
+    const char* expected[] = { "foo", "bar", "baz" };
+
+    int pos = 0;
+    for (char** it = buffer; it != bufEnd(buffer); it++) {
+      ABORT(assertFalse(pos >= 3));
+      TEST(assertEqualString(*it, expected[pos++]));
+    }
+    bufFree(buffer);
+  }
+
   return result;
 }
 

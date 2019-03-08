@@ -7,10 +7,17 @@
  * ================
  *
  * Given a string of characters string interning stores it in an internal buffer and returns the
- * pointer to that internal string. If a string does already exists in the buffer, no new data is
- * stored and the pointer to the already stored string is returned. This approach reduces the
- * memory usage if the program works with a lot with identical strings (e.g. commands from a UI)
- * and reduces string comparison to a simple pointer comparison.
+ * internal `string`. If a string does already exists in the buffer, no new data is stored and
+ * the already interned `string` is returned. A substring of an existing string is not interned
+ * either but instead the interned `string` is returned. If a string is to be interned and there
+ * does exist an interned substring, then the new string is interned while the substring still
+ * remains interned. Otherwise all the copies of the interned substring would become invalid.
+ * Since the substring was interned prior to the larger string, a consecutive interning of the
+ * substring will return the interned substring and not a substring of the larger string.
+ * Substrings are not `'\0'` terminated!
+ *
+ * String interning reduces the memory usage if the program works a lot with identical strings
+ * (e.g. commands from a UI) and reduces string comparison to a simple pointer comparison.
  *
  *
  * Example
@@ -21,41 +28,69 @@
  * #include <assert.h>
  *
  * int main() {
- *   const char* a = strintern("abc");  // the string "abc" is stored in an internal buffer
- *   const char* b = strintern("abc");  // the pointer to stored "abc" is returned
- *   const char c[] = {'a', 'b', 'c', 'd'};
- *   c = strinternRange(c, c+3);        // the pointer to stored "abc" is returned
+ *   string a = strintern("abc");          // interns and returns internal "abc"
+ *   assert(a.chars != "abc");             // "abc" resides in the data segment and is not interned
  *
- *   assert(a == b);                    // no need for costly strcmp()
- *   assert(a == c);
- *   assert(a != "abc");                // "abc" resides in the data segment, is not interned
+ *   string b = strintern("abc");          // returns internal "abc"
+ *   assert(a.chars == b.chars);           // no need for costly strcmp()
  *
- *   strinternFree();                   // release internal memory
+ *   string c = strintern("ab");           // returns substring "ab" to internal "abc"
+ *   assert(c.chars == a.chars);           // memory is reused for substring
+ *   assert(c.len != a.len);               // only the length differs
+ *   assert(!STREQ(a, c));                 // compares with substring support
+ *   assert(c.chars[c.len] != '\0');       // subsring is not terminated!
+ *
+ *   const char s[] = {'_', 'a', 'b', 'c', '_'};
+ *   string d = strinternRange(s+1, s+4);  // returns internal "abc"
+ *   assert(STREQ(a, d));
+ *
+ *   string e = strintern("_abc_");        // interns and returns internal "_abc_"
+ *   string f = strintern("abc");          // returns internal "abc" since it was interned first
+ *   assert(STREQ(a, f));                  // thus no substring to "_abc_"
+ *
+ *   string g = strinternRange(e.chars+1, e.chars+3);  // returns substring "ab" to internal "abc"
+ *   assert(STREQ(c, g));                  // both are substrings of internal "abc"
+ *
+ *   strinternFree();                      // releases internal memory
  * }
  * ```
  */
 
 
+#include "str.h"
+
+
 /**
- * Stores `string` in an internal buffer and return that address. If there is already an interned
- * equal string, then its address is returned and no interning takes place.
+ * The `STREQ()` macro expands to a string comparison by pointer and length comparison.
+ * This condition correctly checks substrings.
+ *
+ * - **param:** `a` - the first string for comparison
+ * - **param:** `b` - the second string for comparison
+ */
+#define STREQ(a, b) (a.chars == b.chars && a.len == b.len)
+
+
+/**
+ * Stores a string in an internal buffer and returns it. If there is already an interned equal
+ * string, then it is returned instead and no interning takes place. If the given string can
+ * be found within an already interned string a substring to that interned string is returned.
+ * The substring will be not ``\0`` terminated.
  *
  * - **param:** `string` - the string to be interned
- * - **return:** the address of the interned string
+ * - **return:** the interned string
  */
-const char* strintern(const char* string);
+string strintern(const char* string);
 
 
 /**
- * Stores a string in a given range. It is useful when substrings from a large string shall be
- * interned. The entire string can be interned by calling `strinternRange(s, s+strlen(s))`.
- * The interned substring will be terminated with `'\0'`.
+ * Stores a string within a given range. It is useful when substrings from a large string shall
+ * be interned. The entire string can be interned by calling `strinternRange(s, s+strlen(s))`.
  *
- * - **param:** `start` - the pointer to the first character
- * - **param:** `end` - the pointer to the last character
- * - **return:** the address of the interned string
+ * - **param:** `start` - the start of the string to be interned
+ * - **param:** `end`   - the end of the string to be interned
+ * - **return:** the interned string
  */
-const char* strinternRange(const char* start, const char* end);
+string strinternRange(const char* start, const char* end);
 
 
 /**

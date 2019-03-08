@@ -1,48 +1,59 @@
 #include "strintern.h"
 #include "sbuffer.h"
 
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <stdio.h>
 
-typedef struct String {
-  size_t length;
-  char*  chars;
-} String;
+static SBUF(char*) internedStrings = NULL;
 
 
-static SBUF(String) _strings = NULL;
-
-
-const char* strintern(const char* string) {
+string strintern(const char* string) {
   return strinternRange(string, string + strlen(string));
 }
 
 
-const char* strinternRange(const char* start, const char* end) {
-  size_t length = end - start;
+string strinternRange(const char* start, const char* end) {
+  size_t length = (end - start < 0) ? 0 : end - start;
 
   // return already interned string if possible
-  for (String* s = _strings; s != bufEnd(_strings); s++) {
-    if (length == s->length && strncmp(start, s->chars, length) == 0) {
-      return s->chars;
+  for (char** it = internedStrings; it != bufEnd(internedStrings); it++) {
+    bool isSubstring = true;
+    bool subIdx = 0;
+    size_t s = 0;
+
+    // iterate over interned string and check if it contains the new string
+    for (size_t i = 0; i < strlen(*it) && s < length; i++) {
+      if (start[s] == (*it)[i]) {
+        s++;
+        if (!isSubstring) {
+          isSubstring = true;
+          subIdx = i;
+        }
+      } else {
+        isSubstring = false;
+        s = 0;
+      }
+    }
+
+    if (isSubstring && s == length) {
+      return (string){ .chars=(*it)+subIdx, .len=length };
     }
   }
 
-  // store a copy of provided string and return the address
-  char* chars = (char*) malloc((length + 1) * sizeof(char));
+  // create copy of new string and intern it
+  char* chars = (char*) malloc(length * sizeof(char));
   memcpy(chars, start, length);
   chars[length] = '\0';
-  String s = { .length=length, .chars=chars };
-  bufPush(_strings, s);
-  return chars;
+  bufPush(internedStrings, chars);
+  return (string){ .chars=chars, .len=length };
 }
 
 
 void strinternFree() {
-  for (String* s = _strings; s != bufEnd(_strings); s++) {
-    free((char*) s->chars);
+  for (char** it = internedStrings; it != bufEnd(internedStrings); it++) {
+    free(*it);
   }
-  bufFree(_strings);
+  bufFree(internedStrings);
 }

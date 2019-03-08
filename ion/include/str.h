@@ -18,17 +18,18 @@
  * ```c {.line-numbers}
  * #include "str.h"
  * #include <assert.h>
+ * #include <stdio.h>
  *
  * int main(int argc, char** argv) {
  *   string option = fromCString(argv[1]);  // wrap C string
- *   if (streq(option, "-h") {              // comparison with C string
+ *   if (streq(option, "-h")) {              // comparison with C string
  *     // print help menu
  *   }
  *
  *   const char* lorem = "Lorem ipsum dolor";
  *   string s = fromRange(lorem+6, lorem+11);    // substring not '\0' terminated!
  *   assert(s.chars == lorem+6);
- *   assert(s.len, 5);
+ *   assert(s.len == 5);
  *   assert(streq(s, "ipsum"));
  *   assert(strequal(s, fromCString("ipsum")));  // because C has no overloading :(
  *
@@ -44,7 +45,6 @@
 
 
 #include <stdbool.h>
-#include <stddef.h>
 
 
 /**
@@ -54,8 +54,8 @@
  * - **field:** `len`   - the length of the string
  */
 typedef struct string {
-  const char*  chars;
-  const size_t len;
+  const char* chars;
+  const int   len;
 } string;
 
 
