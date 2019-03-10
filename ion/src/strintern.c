@@ -1,12 +1,12 @@
 #include "strintern.h"
 #include "sbuffer.h"
+#include "arena.h"
 
-#include <stdlib.h>
 #include <string.h>
 
-#include <stdio.h>
 
 static SBUF(char*) internedStrings = NULL;
+static Arena       allocator       = {};
 
 
 string strintern(const char* string) {
@@ -43,7 +43,7 @@ string strinternRange(const char* start, const char* end) {
   }
 
   // create copy of new string and intern it
-  char* chars = (char*) malloc(length * sizeof(char));
+  char* chars = (char*) arenaAlloc(&allocator, length + 1);
   memcpy(chars, start, length);
   chars[length] = '\0';
   bufPush(internedStrings, chars);
@@ -52,8 +52,6 @@ string strinternRange(const char* start, const char* end) {
 
 
 void strinternFree() {
-  for (char** it = internedStrings; it != bufEnd(internedStrings); it++) {
-    free(*it);
-  }
   bufFree(internedStrings);
+  arenaFree(&allocator);
 }
