@@ -9,18 +9,17 @@
 #define MAX(a, b) ( (a) >= (b) ? (a) : (b) )
 
 
-void* __bufGrow(const void* buffer, size_t newLength, size_t elementSize) {
-  size_t newCapacity = MAX(1 + 2*bufCapacity(buffer), newLength);
+void* __sbufGrow(const SBUF(void) buffer, size_t newLength, size_t elementSize) {
+  size_t newCapacity = MAX(1 + 2*sbufCapacity(buffer), newLength);
   size_t newSize = newCapacity * elementSize + offsetof(BufHeader, bytes);
 
-  assert(bufCapacity(buffer) <= (SIZE_MAX - 1)/2);
-  assert(newCapacity <= (SIZE_MAX - offsetof(BufHeader, bytes))/elementSize );
+  assert(sbufCapacity(buffer) <= (SIZE_MAX - 1)/2);
+  assert(newCapacity <= (SIZE_MAX - offsetof(BufHeader, bytes))/elementSize);
   assert(newCapacity >= newLength);
 
   BufHeader* newHeader;
   if (buffer) {
-    // allocates new memory and copies old data if necessary
-    newHeader = (BufHeader*) realloc(__bufHeader(buffer), newSize);
+    newHeader = (BufHeader*) realloc(__sbufHeader(buffer), newSize);
   } else {
     newHeader = (BufHeader*) malloc(newSize);
     newHeader->length = 0;

@@ -22,6 +22,6 @@ bool strequal(string a, string b) {
 }
 
 
-bool streq(string a, const char* b) {
+bool cstrequal(string a, const char* b) {
   return strequal(a, fromCString(b));
 }

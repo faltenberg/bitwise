@@ -18,7 +18,7 @@ string strinternRange(const char* start, const char* end) {
   size_t length = (end - start < 0) ? 0 : end - start;
 
   // return already interned string if possible
-  for (char** it = internedStrings; it != bufEnd(internedStrings); it++) {
+  for (char** it = internedStrings; it != sbufEnd(internedStrings); it++) {
     bool isSubstring = true;
     bool subIdx = 0;
     size_t s = 0;
@@ -46,12 +46,12 @@ string strinternRange(const char* start, const char* end) {
   char* chars = (char*) arenaAlloc(&allocator, length + 1);
   memcpy(chars, start, length);
   chars[length] = '\0';
-  bufPush(internedStrings, chars);
+  sbufPush(internedStrings, chars);
   return (string){ .chars=chars, .len=length };
 }
 
 
 void strinternFree() {
-  bufFree(internedStrings);
+  sbufFree(internedStrings);
   arenaFree(&allocator);
 }

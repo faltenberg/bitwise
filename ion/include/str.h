@@ -21,8 +21,8 @@
  * #include <stdio.h>
  *
  * int main(int argc, char** argv) {
- *   string option = fromCString(argv[1]);  // wrap C string
- *   if (streq(option, "-h")) {              // comparison with C string
+ *   string option = fromCString(argv[1]);       // wrap C string
+ *   if (streq(option, "-h")) {                  // comparison with C string
  *     // print help menu
  *   }
  *
@@ -30,15 +30,15 @@
  *   string s = fromRange(lorem+6, lorem+11);    // substring not '\0' terminated!
  *   assert(s.chars == lorem+6);
  *   assert(s.len == 5);
- *   assert(streq(s, "ipsum"));
- *   assert(strequal(s, fromCString("ipsum")));  // because C has no overloading :(
+ *   assert(cstrequal(s, "ipsum"));              // compare with C string
+ *   assert(strequal(s, fromCString("ipsum")));  // compare strings
  *
  *   for (int i = 0; i < s.len; i++) {
- *     char c = s.chars[i];  // still easy access
+ *     char c = s.chars[i];                      // still easy access
  *     // do something
  *   }
  *
- *   printf("s: %.*s\n", s.len, s.chars);  // should always print like that
+ *   printf("s: %.*s\n", s.len, s.chars);        // should always print like that
  * }
  * ```
  */
@@ -48,19 +48,19 @@
 
 
 /**
- * Wraps a C string in a struct together with its length.
+ * `string` wraps a C string in a struct together with its length.
  *
  * - **field:** `chars` - the pointer to the characters
  * - **field:** `len`   - the length of the string
  */
 typedef struct string {
   const char* chars;
-  const int   len;
+  int         len;
 } string;
 
 
 /**
- * Creates a new string from a C string.
+ * `fromCString()` sreates a new string from a C string.
  *
  * - **param:** `s` - the C string
  * - **return:** the wrapped string
@@ -69,8 +69,8 @@ string fromCString(const char* s);
 
 
 /**
- * Creates a substring in a given range of some C string. If `start > end` then the length will
- * be `0`, but the string will still point to `start`.
+ * `fromRange()` creates a substring in a given range of some C string. If `start > end` then the
+ * length will be `0`, but the string will still point to `start`.
  *
  * - **param:** `start` - the pointer to the start of the substring
  * - **param:** `end`   - the pointer to the end of the substring
@@ -80,7 +80,8 @@ string fromRange(const char* start, const char* end);
 
 
 /**
- * Compares two strings for equality which means that they have the same length and characters.
+ * `strequal()` compares two strings for equality which means that they have the same length and
+ * characters.
  *
  * - **param:** `a` - the first string
  * - **param:** `b` - the second string
@@ -90,13 +91,14 @@ bool strequal(string a, string b);
 
 
 /**
- * Compares a string to a C string for equality which means they have same length and characters.
+ * `cstrequal()` compares a string to a C string for equality which means they have same length and
+ * characters.
  *
  * - **param:** `a` - the string
  * - **param:** `b` - the C string
  * - **return:** `true` if both strings are equal
  */
-bool streq(string a, const char* b);
+bool cstrequal(string a, const char* b);
 
 
 #endif  //  __STR_H__

@@ -1,14 +1,16 @@
-#include "sbuffer.h"
-#include "ast.h"
-#include "astprinter.h"
-
-#include "strintern.h"
 #include <stdio.h>
-#include <assert.h>
+
+
+typedef enum ErrorCode {
+  SUCCESS,
+  ARG_ERROR,
+  FILE_ERROR,
+} ErrorCode;
 
 
 int main() {
-  ASTNode* node = createStmtBlock(1, createStmtContinue());
-  printlnAST(node);
-  return 0;
+  const char* src = "x + 10*y";
+  printf("parse \"%s\"\n", src);
+  return SUCCESS;
 }
+

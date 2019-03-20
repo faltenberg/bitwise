@@ -51,9 +51,9 @@ static TestResult testStringComparison() {
 
   {
     string s = fromCString("foo");
-    TEST(assertTrue(streq(s, "foo")));
-    TEST(assertFalse(streq(s, "fo")));
-    TEST(assertFalse(streq(s, "bar")));
+    TEST(assertTrue(cstrequal(s, "foo")));
+    TEST(assertFalse(cstrequal(s, "fo")));
+    TEST(assertFalse(cstrequal(s, "bar")));
   }
 
   {
@@ -64,19 +64,19 @@ static TestResult testStringComparison() {
 
   {
     string s = fromRange("foo"+1, "foo"+1);
-    TEST(assertTrue(streq(s, "")));
+    TEST(assertTrue(cstrequal(s, "")));
   }
 
   {
     string s = fromRange("foo"+1, "foo"+0);
-    TEST(assertTrue(streq(s, "")));
+    TEST(assertTrue(cstrequal(s, "")));
   }
 
   {
     const char* lorem = "lorem ipsum dolor";
     string s = fromRange(lorem+6, lorem+11);
     TEST(assertEqualSize(s.len, 5));
-    TEST(assertTrue(streq(s, "ipsum")));
+    TEST(assertTrue(cstrequal(s, "ipsum")));
     TEST(assertTrue(strequal(s, fromCString("ipsum"))));
   }
 

@@ -48,16 +48,16 @@ void* arena_alloc(Arena* arena, size_t size) {
   arena->end = ptr + size;
   arena->totalSpace += size;
   arena->usedSpace += size;
-  bufPush(arena->blocks, arena->ptr);
+  sbufPush(arena->blocks, arena->ptr);
   return ptr;
 }
 
 
 void arenaFree(Arena *arena) {
-  for (void** it = arena->blocks; it != bufEnd(arena->blocks); it++) {
+  for (void** it = arena->blocks; it != sbufEnd(arena->blocks); it++) {
     free(*it);
   }
-  bufFree(arena->blocks);
+  sbufFree(arena->blocks);
   arena->ptr = NULL;
   arena->end = NULL;
   arena->totalSpace = 0;
@@ -71,7 +71,7 @@ void arena_grow(Arena* arena, size_t min_size) {
     size_t size = ALIGN_UP(MAX(ARENA_BLOCK_SIZE, min_size), ARENA_ALIGNMENT);
     arena->ptr = malloc(1024);
     arena->end = arena->ptr + size;
-    bufPush(arena->blocks, arena->ptr);
+    sbufPush(arena->blocks, arena->ptr);
 }
 void* arenaAlloc(Arena *arena, size_t size) {
     if (size > (size_t)(arena->end - arena->ptr)) {

@@ -28,7 +28,7 @@ static TestResult testFirstInterning() {
     TEST(assertNotNull(s.chars));
     TEST(assertNotSame(s.chars, "abc"));
     TEST(assertEqualSize(s.len, 3));
-    TEST(assertTrue(streq(s, "abc")));
+    TEST(assertTrue(cstrequal(s, "abc")));
     strinternFree();
   }
 
@@ -76,7 +76,7 @@ static TestResult testSubstringInterning() {
     TEST(assertSame(a.chars, b.chars));
     TEST(assertNotEqualSize(a.len, b.len));
     TEST(assertEqualSize(b.len, 2));
-    TEST(assertTrue(streq(b, "ab")));
+    TEST(assertTrue(cstrequal(b, "ab")));
     strinternFree();
   }
 
@@ -86,7 +86,7 @@ static TestResult testSubstringInterning() {
     TEST(assertSame(a.chars+1, b.chars));
     TEST(assertNotEqualSize(a.len, b.len));
     TEST(assertEqualSize(b.len, 2));
-    TEST(assertTrue(streq(b, "bc")));
+    TEST(assertTrue(cstrequal(b, "bc")));
     strinternFree();
   }
 
@@ -106,7 +106,7 @@ static TestResult testSubstringInterning() {
     TEST(assertNotSame(a.chars, b.chars));
     TEST(assertSame(c.chars, a.chars+1));
     TEST(assertEqualSize(c.len, 2));
-    TEST(assertTrue(streq(c, "bc")));
+    TEST(assertTrue(cstrequal(c, "bc")));
     strinternFree();
   }
 
@@ -117,7 +117,7 @@ static TestResult testSubstringInterning() {
     TEST(assertNotSame(a.chars, b.chars));
     TEST(assertSame(c.chars, b.chars+1));
     TEST(assertEqualSize(c.len, 3));
-    TEST(assertTrue(streq(c, "bcd")));
+    TEST(assertTrue(cstrequal(c, "bcd")));
     strinternFree();
   }
 
@@ -132,7 +132,7 @@ static TestResult testRangeInterning() {
     string s = strinternRange("abc"+0, "abc"+3);
     TEST(assertNotSame(s.chars, "abc"));
     TEST(assertEqualSize(s.len, 3));
-    TEST(assertTrue(streq(s, "abc")));
+    TEST(assertTrue(cstrequal(s, "abc")));
     strinternFree();
   }
 
@@ -140,7 +140,7 @@ static TestResult testRangeInterning() {
     string s = strinternRange("abc"+0, "abc"+2);
     TEST(assertNotSame(s.chars, "abc"));
     TEST(assertEqualSize(s.len, 2));
-    TEST(assertTrue(streq(s, "ab")));
+    TEST(assertTrue(cstrequal(s, "ab")));
     strinternFree();
   }
 
@@ -148,7 +148,7 @@ static TestResult testRangeInterning() {
     string s = strinternRange("abc"+0, "abc"+0);
     TEST(assertNotNull(s.chars));
     TEST(assertEqualSize(s.len, 0));
-    TEST(assertTrue(streq(s, "")));
+    TEST(assertTrue(cstrequal(s, "")));
     strinternFree();
   }
 
@@ -156,7 +156,7 @@ static TestResult testRangeInterning() {
     string s = strinternRange("abc"+1, "abc"+0);
     TEST(assertNotNull(s.chars));
     TEST(assertEqualSize(s.len, 0));
-    TEST(assertTrue(streq(s, "")));
+    TEST(assertTrue(cstrequal(s, "")));
     strinternFree();
   }
 
@@ -165,7 +165,7 @@ static TestResult testRangeInterning() {
     string b = strinternRange(a.chars+0, a.chars+3);
     TEST(assertSame(b.chars, a.chars));
     TEST(assertEqualSize(b.len, 3));
-    TEST(assertTrue(streq(b, "abc")));
+    TEST(assertTrue(cstrequal(b, "abc")));
     strinternFree();
   }
 
@@ -174,7 +174,7 @@ static TestResult testRangeInterning() {
     string b = strinternRange(a.chars+1, a.chars+3);
     TEST(assertSame(b.chars, a.chars+1));
     TEST(assertEqualSize(b.len, 2));
-    TEST(assertTrue(streq(b, "bc")));
+    TEST(assertTrue(cstrequal(b, "bc")));
     strinternFree();
   }
 
@@ -183,7 +183,7 @@ static TestResult testRangeInterning() {
     string b = strinternRange(a.chars+1, a.chars+2);
     TEST(assertSame(b.chars, a.chars+1));
     TEST(assertEqualSize(b.len, 1));
-    TEST(assertTrue(streq(b, "b")));
+    TEST(assertTrue(cstrequal(b, "b")));
     strinternFree();
   }
 
@@ -193,7 +193,7 @@ static TestResult testRangeInterning() {
     string c = strinternRange(b.chars+1, b.chars+3);
     TEST(assertSame(c.chars, a.chars+1));
     TEST(assertEqualSize(c.len, 2));
-    TEST(assertTrue(streq(c, "bc")));
+    TEST(assertTrue(cstrequal(c, "bc")));
     strinternFree();
   }
 
