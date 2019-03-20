@@ -7,9 +7,9 @@
  * ======
  *
  * Since strings in C are quite limited this header provides a small wrapper. The goal is not to
- * replace the C `string.h` functionality, though. `string`s are not guaranteed to be '\0'
- * terminated! One can say `string` is just a window into a C string, given by a pointer and some
- * non-negative length. This makes creating substrings very fast.
+ * replace the C *string.h* functionality, though. `string`s are not guaranteed to be `'\0'`
+ * terminated and are immutable! One can say `string` is just a window into a C string, given by
+ * a pointer and some non-negative length. This makes creating substrings very fast.
  *
  *
  * Example
@@ -39,6 +39,10 @@
  *   }
  *
  *   printf("s: %.*s\n", s.len, s.chars);        // should always print like that
+ *
+ *   // s.len = 42;        // ERROR
+ *   // s.chars[0] = 'x';  // ERROR
+ *   // s.chars = "foo";   // ERROR
  * }
  * ```
  */
@@ -54,8 +58,8 @@
  * - **field:** `len`   - the length of the string
  */
 typedef struct string {
-  const char* chars;
-  int         len;
+  const char *const chars;
+  const int         len;
 } string;
 
 

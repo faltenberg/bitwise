@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include "str.h"
+
 
 typedef enum ErrorCode {
   SUCCESS,
@@ -9,8 +11,8 @@ typedef enum ErrorCode {
 
 
 int main() {
-  const char* src = "x + 10*y";
-  printf("parse \"%s\"\n", src);
+  string src = fromCString("x + 10*y");
+  printf("parse \"%.*s\"\n", src.len, src.chars);
   return SUCCESS;
 }
 
