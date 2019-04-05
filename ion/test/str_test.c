@@ -19,26 +19,26 @@ static TestResult testStringCreation() {
   }
 
   {
-    string s = fromRange("foo", "foo"+3);
+    string s = fromRange("foo", &"foo"[3]);
     TEST(assertSame(s.chars, "foo"));
     TEST(assertEqualSize(s.len, 3));
   }
 
   {
-    string s = fromRange("foo", "foo"+2);
+    string s = fromRange("foo", &"foo"[2]);
     TEST(assertSame(s.chars, "foo"));
     TEST(assertEqualSize(s.len, 2));
   }
 
   {
-    string s = fromRange("foo", "foo"+0);
+    string s = fromRange("foo", &"foo"[0]);
     TEST(assertSame(s.chars, "foo"));
     TEST(assertEqualSize(s.len, 0));
   }
 
   {
-    string s = fromRange("foo"+1, "foo"+0);
-    TEST(assertSame(s.chars, "foo"+1));
+    string s = fromRange(&"foo"[1], &"foo"[0]);
+    TEST(assertSame(s.chars, &"foo"[1]));
     TEST(assertEqualSize(s.len, 0));
   }
 
@@ -63,12 +63,12 @@ static TestResult testStringComparison() {
   }
 
   {
-    string s = fromRange("foo"+1, "foo"+1);
+    string s = fromRange(&"foo"[1], &"foo"[1]);
     TEST(assertTrue(cstrequal(s, "")));
   }
 
   {
-    string s = fromRange("foo"+1, "foo"+0);
+    string s = fromRange(&"foo"[1], &"foo"[0]);
     TEST(assertTrue(cstrequal(s, "")));
   }
 

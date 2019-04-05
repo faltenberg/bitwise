@@ -129,7 +129,7 @@ static TestResult testRangeInterning() {
   TestResult result = {};
 
   {
-    string s = strinternRange("abc"+0, "abc"+3);
+    string s = strinternRange(&"abc"[0], &"abc"[3]);
     TEST(assertNotSame(s.chars, "abc"));
     TEST(assertEqualSize(s.len, 3));
     TEST(assertTrue(cstrequal(s, "abc")));
@@ -137,7 +137,7 @@ static TestResult testRangeInterning() {
   }
 
   {
-    string s = strinternRange("abc"+0, "abc"+2);
+    string s = strinternRange(&"abc"[0], &"abc"[2]);
     TEST(assertNotSame(s.chars, "abc"));
     TEST(assertEqualSize(s.len, 2));
     TEST(assertTrue(cstrequal(s, "ab")));
@@ -145,7 +145,7 @@ static TestResult testRangeInterning() {
   }
 
   {
-    string s = strinternRange("abc"+0, "abc"+0);
+    string s = strinternRange(&"abc"[0], &"abc"[0]);
     TEST(assertNotNull(s.chars));
     TEST(assertEqualSize(s.len, 0));
     TEST(assertTrue(cstrequal(s, "")));
@@ -153,7 +153,7 @@ static TestResult testRangeInterning() {
   }
 
   {
-    string s = strinternRange("abc"+1, "abc"+0);
+    string s = strinternRange(&"abc"[1], &"abc"[0]);
     TEST(assertNotNull(s.chars));
     TEST(assertEqualSize(s.len, 0));
     TEST(assertTrue(cstrequal(s, "")));

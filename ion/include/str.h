@@ -1,3 +1,4 @@
+
 #ifndef __STR_H__
 #define __STR_H__
 
@@ -8,8 +9,8 @@
  *
  * Since strings in C are quite limited this header provides a small wrapper. The goal is not to
  * replace the C *string.h* functionality, though. `string`s are not guaranteed to be `'\0'`
- * terminated and are immutable! One can say `string` is just a window into a C string, given by
- * a pointer and some non-negative length. This makes creating substrings very fast.
+ * terminated! One can say `string` is just a window into a C string, given by a pointer and some
+ * non-negative length. This makes creating substrings very fast.
  *
  *
  * Example
@@ -49,6 +50,7 @@
 
 
 #include <stdbool.h>
+#include <stddef.h>
 
 
 /**
@@ -58,8 +60,8 @@
  * - **field:** `len`   - the length of the string
  */
 typedef struct string {
-  const char *const chars;
-  const int         len;
+  const char* chars;
+  size_t      len;
 } string;
 
 
