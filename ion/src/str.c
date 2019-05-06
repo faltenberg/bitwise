@@ -3,13 +3,13 @@
 #include <string.h>
 
 
-string fromCString(const char* s) {
-  return (string){ .chars=s, .len=strlen(s) };
+string stringFromArray(const char* s) {
+  return (string){ .len=strlen(s), .chars=s };
 }
 
 
-string fromRange(const char* start, const char* end) {
-  return (string){ .chars=start, .len=(end-start < 0 ? 0 : end-start) };
+string stringFromRange(const char* start, const char* end) {
+  return (string){ .len=(end-start < 0 ? 0 : end-start), .chars=start };
 }
 
 
@@ -18,10 +18,11 @@ bool strequal(string a, string b) {
   for (int i = 0; equal && i < a.len; i++) {
     equal = a.chars[i] == b.chars[i];
   }
+
   return equal;
 }
 
 
 bool cstrequal(string a, const char* b) {
-  return strequal(a, fromCString(b));
+  return strequal(a, stringFromArray(b));
 }

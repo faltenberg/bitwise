@@ -18,7 +18,6 @@
  * A declared buffer must be initialized with `NULL`! Otheriwse the macros cannot distinguish it
  * from existing buffers. The delete macro will assign `NULL` to the buffer variable automatically.
  *
- *
  * The memory for a buffer of integers does look like this:
  *
  * ```
@@ -40,10 +39,15 @@
  * int main() {
  *   // expands to int* buffer = NULL;
  *   SBUF(int) buffer = NULL;  // the NULL assignment is essential!
- *   sbufPush(buffer, 42);      // (re-)allocates memory if necessary and stores value at the end
- *   sbufFit(buffer, 10);       // optional: reserves memory for 10 more items
+ *   assert(sbufLength(buffer) == 0);
+ *   assert(sbufCapacity(buffer) == 0);
  *
+ *   sbufPush(buffer, 42);  // (re-)allocates memory if necessary and stores value at the end
  *   assert(buffer != NULL);
+ *   assert(sbufLength(buffer) == 1);
+ *   assert(sbufCapacity(buffer) == 1);
+ *
+ *   sbufFit(buffer, 10);  // reserves memory for 10 more items
  *   assert(sbufLength(buffer) == 1);
  *   assert(sbufCapacity(buffer) == 11);
  *
@@ -56,6 +60,9 @@
  *   }
  *
  *   sbufFree(buffer);  // deallocates the memory and sets buffer to NULL
+ *   assert(buffer == NULL);
+ *   assert(sbufLength(buffer) == 0);
+ *   assert(sbufCapacity(buffer) == 0);
  * }
  * ```
  */
@@ -70,9 +77,9 @@
  * is used to access the buffer data. It doesn't count into `sizeof(BufHeader)` as its size is `0`
  * and is only increased during runtime.
  *
- * - **field:** `length` - the current length of the buffer
+ * - **field:** `length`   - the current length of the buffer
  * - **field:** `capacity` - the capacity of the buffer
- * - **field:** `bytes` - the buffer data
+ * - **field:** `bytes`    - the buffer data
  */
 typedef struct BufHeader {
   size_t length;
@@ -140,7 +147,7 @@ typedef struct BufHeader {
  * an element at the end. This macro does push one single element! The `__VA_ARGS__` are used for
  * some special data* types that need extra treatment on the client's side otherwise.
  *
- * - **param:** `b` - the pointer to a buffer
+ * - **param:** `b`   - the pointer to a buffer
  * - **param:** `...` - the element that shall be pushed to the buffer
  */
 #define sbufPush(b, ...) ( sbufFit(b, 1), (b)[__sbufHeader(b)->length++] = (__VA_ARGS__) )
