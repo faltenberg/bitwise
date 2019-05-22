@@ -2,86 +2,8 @@
 
 #include "source.h"
 
-#include <stdio.h>
-
-
-#define FILENAME "__temp__.txt"
-
-
-static bool deleteFile() {
-  return remove(FILENAME) == 0;
-}
-
-
-#define DELETE_FILE()                           \
-  __ok = deleteFile();                          \
-  if (!__ok) {                                  \
-    INFO("check if " FILENAME " was deleted");  \
-  }                                             \
-
-
-static bool writeFile(const char* content) {
-  FILE* file = fopen(FILENAME, "w");
-  if (file == NULL) {
-    fclose(file);
-    return false;
-  }
-
-  if (fputs(content, file) == EOF) {
-    fclose(file);
-    return false;
-  }
-
-  fclose(file);
-  return true;
-}
-
-
-#define WRITE_FILE(s)                           \
-  bool __ok = writeFile(s);                     \
-  if (!__ok) {                                  \
-    FAIL("could not create test file");         \
-    DELETE_FILE();                              \
-    ABORT(0);                                   \
-  }                                             \
-
-
-#define assertEqualStr(s, cs) __assertEqualStr(__FILE__, __LINE__, s, cs)
-bool __assertEqualStr(const char* file, int line, string s, const char* cs) {
-  printVerbose(__PROMPT, file, line);
-  string exp = stringFromArray(cs);
-
-  int index = 0;
-  bool equal = s.len == exp.len;
-
-  if (!equal) {
-    printVerbose(RED "ERROR: " RST);
-    printVerbose("in \"%.*s\"%s expected length [%d] == [%d]\n",
-                 (s.len <= 5 ? s.len : 5), s.chars, (s.len > 5 ? "~" : ""), s.len, exp.len);
-    return false;
-  }
-
-  while (index < s.len && equal) {
-    equal = s.chars[index] == exp.chars[index];
-    if (equal) {
-      ++index;
-    }
-  }
-
-  if (equal) {
-    printVerbose(GRN "OK\n" RST);
-    return true;
-  } else {
-    printVerbose(RED "ERROR: " RST);
-    printVerbose("in \"%.*s\"%s[%d] expected [%c] == [%c]\n",
-                 (s.len <= 5 ? s.len : 5), s.chars, (s.len > 5 ? "~" : ""), index,
-                 s.chars[index], exp.chars[index]);
-    return false;
-  }
-}
-
-
-/********************************************* TESTS *********************************************/
+#define FILENAME "__source__.tmp"
+#include "util.h"
 
 
 static TestResult testCreationFromString() {

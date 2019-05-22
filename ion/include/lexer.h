@@ -6,11 +6,14 @@
 
 
 typedef struct Lexer {
-
+  Source   source;
+  TokenLoc currentLoc;
+  TokenLoc nextLoc;
+  int      index;
 } Lexer;
 
 
-Lexer createLexerFromSource(Source src);
+Lexer lexerFromSource(Source src);
 
 Token nextToken(Lexer* lexer);
 

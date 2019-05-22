@@ -1,97 +1,147 @@
 #include "lexer.h"
 
-#include <stdio.h>
+#include <ctype.h>
 
 
-Lexer newLexer(Source src) {
-  return (Lexer){ };
+static TokenLoc loc(int line, int pos) {
+  return (TokenLoc){ .line=line, .pos=pos };
 }
 
 
-static Token tokenEOF() {
-  return (Token){ .kind=TOKEN_EOF, .content="\0" };
+Lexer lexerFromSource(Source src) {
+  return (Lexer){ .source=src, .index=0, .currentLoc=loc(0, 0), .nextLoc=loc(1, 1) };
 }
 
 
-static Token tokenInt(const char* value) {
-  return (Token){ .kind=TOKEN_INT, .content=value };
-}
+static char nextChar(Lexer* lexer) {
+  lexer->currentLoc = lexer->nextLoc;
+  char c = lexer->source.content.chars[lexer->index];
+  lexer->index++;
 
-
-static Token tokenName(const char* name) {
-  return (Token){ .kind=TOKEN_NAME, .content=name };
-}
-
-
-static Token tokenOp(const char* op) {
-  return (Token){ .kind=TOKEN_OP, .content=op };
-}
-
-
-static Token tokenSep(const char* sep) {
-  return (Token){ .kind=TOKEN_SEP, .content=sep };
-}
-
-
-static int    current = -1;
-static Token* tokens;
-static int    length;
-static bool   initialized = false;
-
-static void init() {
-  if (!initialized) {
-    length = 7;
-    tokens = (Token*) malloc(length*sizeof(Token));
-    tokens[0] = tokenName("a");
-    tokens[1] = tokenOp("*");
-    tokens[2] = tokenName("b");
-    tokens[3] = tokenOp("+");
-    tokens[4] = tokenName("c");
-//    tokens[5] = tokenOp("*");
-    tokens[5] = tokenName("d");
-    tokens[6] = tokenEOF();
-    initialized = true;
+  if (c == '\n') {
+    lexer->nextLoc.line++;
+    lexer->nextLoc.pos = 1;
+  } else if (c != '\0') {
+    lexer->nextLoc.pos++;
   }
+
+  return c;
+}
+
+
+static char peekChar(Lexer* lexer) {
+  return lexer->source.content.chars[lexer->index];
 }
 
 
 Token nextToken(Lexer* lexer) {
-  init();
-  if (current < length-1) {
-    current++;
+  Token token = (Token){ .kind=TOKEN_NONE, .source=&lexer->source,
+                         .start=loc(0, 0), .end=loc(0, 0), .chars=stringFromArray("") };
+
+  char c = peekChar(lexer);
+  while (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+    nextChar(lexer);
+    c = peekChar(lexer);
   }
-  return tokens[current];
-}
+
+  const char* start = &lexer->source.content.chars[lexer->index];
+  char currentChar = nextChar(lexer);
+  token.start = lexer->currentLoc;
+  switch (currentChar) {
+    case '\0':
+    {
+      token.kind = TOKEN_EOF;
+    } break;
+
+    case 'a':  case 'b':  case 'c':  case 'd':  case 'e':  case 'f':  case 'g':
+    case 'h':  case 'i':  case 'j':  case 'k':  case 'l':  case 'm':  case 'n':
+    case 'o':  case 'p':  case 'q':  case 'r':  case 's':  case 't':  case 'u':
+    case 'v':  case 'w':  case 'x':  case 'y':  case 'z':
+    case 'A':  case 'B':  case 'C':  case 'D':  case 'E':  case 'F':  case 'G':
+    case 'H':  case 'I':  case 'J':  case 'K':  case 'L':  case 'M':  case 'N':
+    case 'O':  case 'P':  case 'Q':  case 'R':  case 'S':  case 'T':  case 'U':
+    case 'V':  case 'W':  case 'X':  case 'Y':  case 'Z':
+    case '_':
+    {
+      token.kind = TOKEN_NAME;
+      while (isalnum(peekChar(lexer)) || peekChar(lexer) == '_') {
+        currentChar = nextChar(lexer);
+      }
+      string name = stringFromRange(start, &lexer->source.content.chars[lexer->index]);
+      if (isKeyword(name)) {
+        token.kind = TOKEN_KEYWORD;
+      }
+    } break;
 
 
-Token peekToken(Lexer* lexer) {
-  init();
-  return tokens[current+1];
-}
+    case '0':
+    {
+      token.kind = TOKEN_INT;
+      if (peekChar(lexer) == 'x' || peekChar(lexer) == 'X') {
+        token.kind = TOKEN_ERROR;  // assume error if loop is not entered (thus no digits)
+        currentChar = nextChar(lexer);
+        bool hasDigit = false;
+        while (isdigit(peekChar(lexer)) || peekChar(lexer) == '_' ||
+               (peekChar(lexer) >= 'a' && peekChar(lexer) <= 'f') ||
+               (peekChar(lexer) >= 'A' && peekChar(lexer) <= 'F')) {
+          token.kind = TOKEN_INT;
+          currentChar = nextChar(lexer);
+          hasDigit |= (currentChar != '_');
+        }
+        if (!hasDigit || isalpha(peekChar(lexer))) {
+          token.kind = TOKEN_ERROR;
+          token.chars = stringFromArray("invalid hex integer");
+          while (isalnum(peekChar(lexer)) || peekChar(lexer) == '_') {
+            currentChar = nextChar(lexer);
+          }
+        }
+        break;
+      }
+      if (peekChar(lexer) == 'b' || peekChar(lexer) == 'B') {
+        token.kind = TOKEN_ERROR;  // assume error if loop is not entered (thus no digits)
+        currentChar = nextChar(lexer);
+        while (peekChar(lexer) == '0' || peekChar(lexer) == '1') {
+          token.kind = TOKEN_INT;
+          currentChar = nextChar(lexer);
+        }
+        if (isalnum(peekChar(lexer))) {
+          token.kind = TOKEN_ERROR;
+          token.chars = stringFromArray("invalid bin integer");
+          while (isalnum(peekChar(lexer))) {
+            currentChar = nextChar(lexer);
+          }
+        }
+        break;
+      }
+    }
 
+    case '1':  case '2':  case '3':  case '4':
+    case '5':  case '6':  case '7':  case '8':  case '9':
+    {
+      token.kind = TOKEN_INT;
+      while (isdigit(peekChar(lexer)) || peekChar(lexer) == '_') {
+        currentChar = nextChar(lexer);
+      }
+      if (isalpha(peekChar(lexer))) {
+        token.kind = TOKEN_ERROR;
+        token.chars = stringFromArray("invalid integer");
+        while (isalnum(peekChar(lexer))) {
+          currentChar = nextChar(lexer);
+        }
+      }
+    } break;
 
-void printToken(const Token* token) {
-  switch (token->kind) {
-    case TOKEN_NONE:
-      printf("Token[ TOKEN_NONE ]\n");
-      break;
-    case TOKEN_EOF:
-      printf("Token[ TOKEN_EOF ]\n");
-      break;
-    case TOKEN_INT:
-      printf("Token[ TOKEN_INT %s ]\n", token->content);
-      break;
-    case TOKEN_NAME:
-      printf("Token[ TOKEN_NAME %s ]\n", token->content);
-      break;
-    case TOKEN_OP:
-      printf("Token[ TOKEN_OP %s ]\n", token->content);
-      break;
-    case TOKEN_SEP:
-      printf("Token[ TOKEN_SEP %s ]\n", token->content);
-      break;
     default:
-      printf("Token[ UNKNOWN ]\n");
-      break;
+    {
+      // TODO: create proper error message
+      // NOTE: make sure not to overwrite the message later before return!
+      token.kind = TOKEN_ERROR;
+      token.chars = stringFromArray("could not parse character '$$$' to token");
+    } break;
   }
+  token.end = lexer->currentLoc;
+  const char* end = &lexer->source.content.chars[lexer->index];
+  token.chars = stringFromRange(start, (token.kind == TOKEN_EOF) ? end-1 : end);
+
+  return token;
 }

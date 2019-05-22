@@ -70,8 +70,8 @@ Source sourceFromFile(const char* fileName) {
 
 
 void deleteSource(Source* source) {
-  free(source->fileName.chars);
-  free(source->content.chars);
+  free((char*)source->fileName.chars);
+  free((char*)source->content.chars);
   source->fileName = stringFromArray("");
   source->content = stringFromArray("");
   source->status = SOURCE_NONE;
