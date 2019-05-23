@@ -14,10 +14,12 @@ Lexer lexerFromSource(Source src) {
 
 
 static char nextChar(Lexer* lexer) {
-  lexer->currentLoc = lexer->nextLoc;
   char c = lexer->source.content.chars[lexer->index];
-  lexer->index++;
+  if (lexer->index < lexer->source.content.len) {
+    lexer->index++;
+  }
 
+  lexer->currentLoc = lexer->nextLoc;
   if (c == '\n') {
     lexer->nextLoc.line++;
     lexer->nextLoc.pos = 1;
@@ -30,7 +32,11 @@ static char nextChar(Lexer* lexer) {
 
 
 static char peekChar(Lexer* lexer) {
-  return lexer->source.content.chars[lexer->index];
+  if (lexer->index < lexer->source.content.len) {
+    return lexer->source.content.chars[lexer->index];
+  } else {
+    return '\0';
+  }
 }
 
 

@@ -3,6 +3,11 @@
 #include "lexer.h"
 
 #include "util.h"
+#include "sbuffer.h"
+
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 static TokenLoc loc(int line, int pos) {
@@ -70,7 +75,93 @@ static bool __assertEqualToken(const char* file, int line, Token t, Token exp) {
 }
 
 
-////////////////////////////////////////////////////////////
+typedef struct TestCase {
+  char*       name;
+  char*       input;
+  const char* file;
+  int         line;
+  SBUF(Token) tokens;
+} TestCase;
+
+
+static SBUF(TestCase) g_testCases = NULL;
+static int            g_current = 0;
+
+
+static TestResult testFunc() {
+  TestResult result = {};
+  TestCase* testCase = &g_testCases[g_current++];
+  Source src = sourceFromString(testCase->input);
+  Lexer lexer = lexerFromSource(src);
+
+  for (int i = 0; i < sbufLength(testCase->tokens); i++) {
+    Token t = nextToken(&lexer);
+    TEST(__assertEqualToken(testCase->file, testCase->line, t, testCase->tokens[i]));
+  }
+
+  deleteSource(&src);
+  return result;
+}
+
+
+static char* unescape(const char* in) {
+  char* out = (char*) malloc(strlen(in) + 1);
+
+  bool esc = false;
+  int i = 0;
+  while (*in != '\0') {
+    if (esc) {
+      esc = false;
+
+      switch (*in) {
+        case '\\':  out[i++] = '\\';  break;
+        case '\'':  out[i++] = '\'';  break;
+        case '\"':  out[i++] = '\"';  break;
+        case 'r':   out[i++] = '\r';  break;
+        case 'n':   out[i++] = '\n';  break;
+        case 't':   out[i++] = '\t';  break;
+        case 'v':   out[i++] = '\v';  break;
+        case '0':   out[i++] = '\0';  break;
+        case 'a':   out[i++] = '\a';  break;
+        case 'b':   out[i++] = '\b';  break;
+        case 'e':   out[i++] = '\e';  break;
+        case 'f':   out[i++] = '\f';  break;
+      }
+    } else if (*in == '\\') {
+      esc = true;
+    } else {
+      out[i++] = *in;
+    }
+    in++;
+  }
+
+  out[i] = '\0';
+  return out;
+}
+
+
+#define createTest(s, in, n, ...) __createTest(__FILE__, __LINE__, s, in, n, __VA_ARGS__)
+static void __createTest(const char* file, int line, TestSuite* suite, const char* input,
+                         int numTokens, ...) {
+  TestCase testCase = { .file=file, .line=line };
+  testCase.name = (char*) malloc(100);
+  snprintf(testCase.name, 100, "parse \"%s\"", input);
+  testCase.input = unescape(input);
+
+  va_list args;
+  va_start(args, numTokens);
+  for (int i = 0; i < numTokens; i++) {
+    Token token = va_arg(args, Token);
+    sbufPush(testCase.tokens, token);
+  }
+  va_end(args);
+
+  sbufPush(g_testCases, testCase);
+  addTest(suite, &testFunc, testCase.name);
+}
+
+
+/********************************************* TESTS *********************************************/
 
 
 static TestResult testCreation() {
@@ -90,551 +181,356 @@ static TestResult testCreation() {
 }
 
 
-static TestResult testEndOfLine() {
-  TestResult result = {};
+static void addTestsEndOfLine(TestSuite* suite) {
+  const char* in;
 
-  {
-    Source src = sourceFromString("");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(1, 1), loc(1, 1), "")));
-    t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(1, 1), loc(1, 1), "")));
-    deleteSource(&src);
-  }
+  in = "";
+  createTest(suite, in, 2,
+             token(TOKEN_EOF, loc(1, 1), loc(1, 1), ""),
+             token(TOKEN_EOF, loc(1, 1), loc(1, 1), "")
+            );
 
-  {
-    Source src = sourceFromString("\0");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(1, 1), loc(1, 1), "")));
-    t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(1, 1), loc(1, 1), "")));
-    deleteSource(&src);
-  }
+  in = "\\0";
+  createTest(suite, in, 2,
+             token(TOKEN_EOF, loc(1, 1), loc(1, 1), ""),
+             token(TOKEN_EOF, loc(1, 1), loc(1, 1), "")
+            );
 
-  {
-    Source src = sourceFromString("\n");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(2, 1), loc(2, 1), "")));
-    t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(2, 1), loc(2, 1), "")));
-    deleteSource(&src);
-  }
+  in = "\\n";
+  createTest(suite, in, 2,
+             token(TOKEN_EOF, loc(2, 1), loc(2, 1), ""),
+             token(TOKEN_EOF, loc(2, 1), loc(2, 1), "")
+            );
 
-  {
-    Source src = sourceFromString("x");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")));
-    t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")));
-    deleteSource(&src);
-  }
-
-  return result;
+  in = "x";
+  createTest(suite, in, 3,
+             token(TOKEN_NAME, loc(1, 1), loc(1, 1), "x"),
+             token(TOKEN_EOF, loc(1, 2), loc(1, 2), ""),
+             token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")
+            );
 }
 
 
-static TestResult testTokenName() {
-  TestResult result = {};
+static void addTestsTokenName(TestSuite* suite) {
+  const char* in;
 
-  {
-    Source src = sourceFromString("x");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_NAME, loc(1, 1), loc(1, 1), "x")));
-    deleteSource(&src);
-  }
+  in = "x";
+  createTest(suite, in, 1,
+             token(TOKEN_NAME, loc(1, 1), loc(1, 1), "x")
+            );
 
-  {
-    Source src = sourceFromString("abc");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_NAME, loc(1, 1), loc(1, 3), "abc")));
-    deleteSource(&src);
-  }
+  in = "abc";
+  createTest(suite, in, 1,
+             token(TOKEN_NAME, loc(1, 1), loc(1, 3), "abc")
+            );
 
-  {
-    Source src = sourceFromString("ABC");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_NAME, loc(1, 1), loc(1, 3), "ABC")));
-    deleteSource(&src);
-  }
+  in = "ABC";
+  createTest(suite, in, 1,
+             token(TOKEN_NAME, loc(1, 1), loc(1, 3), "ABC")
+            );
 
-  {
-    Source src = sourceFromString("a_b");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_NAME, loc(1, 1), loc(1, 3), "a_b")));
-    deleteSource(&src);
-  }
+  in = "a_b";
+  createTest(suite, in, 1,
+             token(TOKEN_NAME, loc(1, 1), loc(1, 3), "a_b")
+            );
 
-  {
-    Source src = sourceFromString("_");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 1), "_")));
-    deleteSource(&src);
-  }
+  in = "_";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 1), "_")
+            );
 
-  {
-    Source src = sourceFromString("x_");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_NAME, loc(1, 1), loc(1, 2), "x_")));
-    deleteSource(&src);
-  }
+  in = "x_";
+  createTest(suite, in, 1,
+             token(TOKEN_NAME, loc(1, 1), loc(1, 2), "x_")
+            );
 
-  {
-    Source src = sourceFromString("_x");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_NAME, loc(1, 1), loc(1, 2), "_x")));
-    deleteSource(&src);
-  }
+  in = "_x";
+  createTest(suite, in, 1,
+             token(TOKEN_NAME, loc(1, 1), loc(1, 2), "_x")
+            );
 
-  {
-    Source src = sourceFromString("_123");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_NAME, loc(1, 1), loc(1, 4), "_123")));
-    deleteSource(&src);
-  }
+  in = "_123";
+  createTest(suite, in, 1,
+             token(TOKEN_NAME, loc(1, 1), loc(1, 4), "_123")
+            );
 
-  {
-    Source src = sourceFromString("ab123c");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_NAME, loc(1, 1), loc(1, 6), "ab123c")));
-    deleteSource(&src);
-  }
-
-  return result;
+  in = "ab123c";
+  createTest(suite, in, 1,
+             token(TOKEN_NAME, loc(1, 1), loc(1, 6), "ab123c")
+            );
 }
 
 
-static TestResult testTokenInt() {
-  TestResult result = {};
+static void addTestsTokenInt(TestSuite* suite) {
+  const char* in;
 
-  {
-    Source src = sourceFromString("0");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 1), "0")));
-    deleteSource(&src);
-  }
+  in = "0";
+  createTest(suite, in, 1,
+             token(TOKEN_INT, loc(1, 1), loc(1, 1), "0")
+            );
 
-  {
-    Source src = sourceFromString("1");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 1), "1")));
-    deleteSource(&src);
-  }
+  in = "1";
+  createTest(suite, in, 1,
+             token(TOKEN_INT, loc(1, 1), loc(1, 1), "1")
+            );
 
-  {
-    Source src = sourceFromString("123");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 3), "123")));
-    deleteSource(&src);
-  }
+  in = "123";
+  createTest(suite, in, 1,
+             token(TOKEN_INT, loc(1, 1), loc(1, 3), "123")
+            );
 
-  {
-    Source src = sourceFromString("0123abc");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_ERROR, loc(1, 1), loc(1, 7), "")));
-    deleteSource(&src);
-  }
+  in = "0123abc";
+  createTest(suite, in, 1,
+             token(TOKEN_ERROR, loc(1, 1), loc(1, 7), "")
+            );
 
-  {
-    Source src = sourceFromString("0__2_");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 5), "0__2_")));
-    deleteSource(&src);
-  }
+  in = "0__2_";
+  createTest(suite, in, 1,
+             token(TOKEN_INT, loc(1, 1), loc(1, 5), "0__2_")
+            );
 
-  {
-    Source src = sourceFromString("1__2_");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 5), "1__2_")));
-    deleteSource(&src);
-  }
+  in = "1__2_";
+  createTest(suite, in, 1,
+             token(TOKEN_INT, loc(1, 1), loc(1, 5), "1__2_")
+            );
 
-  {
-    Source src = sourceFromString("_123");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_NAME, loc(1, 1), loc(1, 4), "_123")));
-    deleteSource(&src);
-  }
-
-  return result;
+  in = "_123";
+  createTest(suite, in, 1,
+             token(TOKEN_NAME, loc(1, 1), loc(1, 4), "_123")
+            );
 }
 
 
-static TestResult testTokenHexInt() {
-  TestResult result = {};
+static void addTestsTokenHexInt(TestSuite* suite) {
+  const char* in;
 
-  {
-    Source src = sourceFromString("0x12345abcdef67890");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 18), "0x12345abcdef67890")));
-    deleteSource(&src);
-  }
+  in = "0x12345abcdef67890";
+  createTest(suite, in, 1,
+             token(TOKEN_INT, loc(1, 1), loc(1, 18), "0x12345abcdef67890")
+            );
 
-  {
-    Source src = sourceFromString("0XABCDEF1234abcdef");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 18), "0XABCDEF1234abcdef")));
-    deleteSource(&src);
-  }
+  in = "0XABCDEF1234abcdef";
+  createTest(suite, in, 1,
+             token(TOKEN_INT, loc(1, 1), loc(1, 18), "0XABCDEF1234abcdef")
+            );
 
-  {
-    Source src = sourceFromString("1x123");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")));
-    deleteSource(&src);
-  }
+  in = "1x123";
+  createTest(suite, in, 1,
+             token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
+            );
 
-  {
-    Source src = sourceFromString("00x123");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_ERROR, loc(1, 1), loc(1, 6), "")));
-    deleteSource(&src);
-  }
+  in = "00x123";
+  createTest(suite, in, 1,
+             token(TOKEN_ERROR, loc(1, 1), loc(1, 6), "")
+            );
 
-  {
-    Source src = sourceFromString("0xABCg123");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_ERROR, loc(1, 1), loc(1, 9), "")));
-    deleteSource(&src);
-  }
+  in = "0xABCg123";
+  createTest(suite, in, 1,
+             token(TOKEN_ERROR, loc(1, 1), loc(1, 9), "")
+            );
 
-  {
-    Source src = sourceFromString("0x");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")));
-    deleteSource(&src);
-  }
+  in = "0x";
+  createTest(suite, in, 1,
+             token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")
+            );
 
-  {
-    Source src = sourceFromString("0xABCD_1234");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 11), "0xABCD_1234")));
-    deleteSource(&src);
-  }
+  in = "0xABCD_1234";
+  createTest(suite, in, 1,
+             token(TOKEN_INT, loc(1, 1), loc(1, 11), "0xABCD_1234")
+            );
 
-  {
-    Source src = sourceFromString("0x_");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "")));
-    deleteSource(&src);
-  }
+  in = "0x_";
+  createTest(suite, in, 1,
+             token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "0x_")
+            );
 
-  {
-    Source src = sourceFromString("0X__12AB__");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 10), "0X__12AB__")));
-    deleteSource(&src);
-  }
-
-  return result;
+  in = "0X__12AB__";
+  createTest(suite, in, 1,
+             token(TOKEN_INT, loc(1, 1), loc(1, 10), "0X__12AB__")
+            );
 }
 
 
-static TestResult testTokenBinInt() {
-  TestResult result = {};
+static void addTestsTokenBinInt(TestSuite* suite) {
+  const char* in;
 
-  {
-    Source src = sourceFromString("0b0101");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 6), "0b0101")));
-    deleteSource(&src);
-  }
+  in = "0b0101";
+  createTest(suite, in, 1,
+             token(TOKEN_INT, loc(1, 1), loc(1, 6), "0b0101")
+            );
 
-  {
-    Source src = sourceFromString("0B1100");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 6), "0B1100")));
-    deleteSource(&src);
-  }
+  in = "0B1100";
+  createTest(suite, in, 1,
+             token(TOKEN_INT, loc(1, 1), loc(1, 6), "0B1100")
+            );
 
-  {
-    Source src = sourceFromString("1b0011");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_ERROR, loc(1, 1), loc(1, 6), "")));
-    deleteSource(&src);
-  }
+  in = "1b0011";
+  createTest(suite, in, 1,
+             token(TOKEN_ERROR, loc(1, 1), loc(1, 6), "")
+            );
 
-  {
-    Source src = sourceFromString("00b0011");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_ERROR, loc(1, 1), loc(1, 7), "")));
-    deleteSource(&src);
-  }
+  in = "00b0011";
+  createTest(suite, in, 1,
+             token(TOKEN_ERROR, loc(1, 1), loc(1, 7), "")
+            );
 
-  {
-    Source src = sourceFromString("0b012");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")));
-    deleteSource(&src);
-  }
+  in = "0b012";
+  createTest(suite, in, 1,
+             token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
+            );
 
-  {
-    Source src = sourceFromString("0b0a1");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")));
-    deleteSource(&src);
-  }
+  in = "0b0a1";
+  createTest(suite, in, 1,
+             token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
+            );
 
-  {
-    Source src = sourceFromString("0b");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")));
-    deleteSource(&src);
-  }
-
-  return result;
+  in = "0b";
+  createTest(suite, in, 1,
+             token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")
+            );
 }
 
 
-static TestResult testWhitespaces() {
-  TestResult result = {};
+static void addTestsWhitespaces(TestSuite* suite) {
+  const char* in;
 
-  {
-    Source src = sourceFromString(" ");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")));
-    deleteSource(&src);
-  }
+  in = " ";
+  createTest(suite, in, 1,
+             token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")
+            );
 
-  {
-    Source src = sourceFromString("  ");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(1, 3), loc(1, 3), "")));
-    deleteSource(&src);
-  }
+  in = "  ";
+  createTest(suite, in, 1,
+             token(TOKEN_EOF, loc(1, 3), loc(1, 3), "")
+            );
 
-  {
-    Source src = sourceFromString("\t");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")));
-    deleteSource(&src);
-  }
+  in = "\\t";
+  createTest(suite, in, 1,
+             token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")
+            );
 
-  {
-    Source src = sourceFromString(" \r\n\t");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_EOF, loc(2, 2), loc(2, 2), "")));
-    deleteSource(&src);
-  }
+  in = " \\r\\n\\t";
+  createTest(suite, in, 1,
+             token(TOKEN_EOF, loc(2, 2), loc(2, 2), "")
+            );
 
-  {
-    Source src = sourceFromString("123 xyz");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_INT, loc(1, 1), loc(1, 3), "123")));
-    t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_NAME, loc(1, 5), loc(1, 7), "xyz")));
-    deleteSource(&src);
-  }
-
-  return result;
+  in = "123 xyz";
+  createTest(suite, in, 2,
+             token(TOKEN_INT, loc(1, 1), loc(1, 3), "123"),
+             token(TOKEN_NAME, loc(1, 5), loc(1, 7), "xyz")
+            );
 }
 
 
-static TestResult testTokenKeyword() {
-  TestResult result = {};
+static void addTestsTokenKeyword(TestSuite* suite) {
+  const char* in;
 
-  {
-    Source src = sourceFromString("if");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 2), "if")));
-    deleteSource(&src);
-  }
+  in = "if";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 2), "if")
+            );
 
-  {
-    Source src = sourceFromString("else");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "else")));
-    deleteSource(&src);
-  }
+  in = "else";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "else")
+            );
 
-  {
-    Source src = sourceFromString("do");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 2), "do")));
-    deleteSource(&src);
-  }
+  in = "do";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 2), "do")
+            );
 
-  {
-    Source src = sourceFromString("while");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "while")));
-    deleteSource(&src);
-  }
+  in = "while";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "while")
+            );
 
-  {
-    Source src = sourceFromString("for");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 3), "for")));
-    deleteSource(&src);
-  }
+  in = "for";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 3), "for")
+            );
 
-  {
-    Source src = sourceFromString("switch");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "switch")));
-    deleteSource(&src);
-  }
+  in = "switch";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "switch")
+            );
 
-  {
-    Source src = sourceFromString("case");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "case")));
-    deleteSource(&src);
-  }
+  in = "case";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "case")
+            );
 
-  {
-    Source src = sourceFromString("break");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "break")));
-    deleteSource(&src);
-  }
+  in = "break";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "break")
+            );
 
-  {
-    Source src = sourceFromString("continue");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 8), "continue")));
-    deleteSource(&src);
-  }
+  in = "continue";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 8), "continue")
+            );
 
-  {
-    Source src = sourceFromString("return");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "return")));
-    deleteSource(&src);
-  }
+  in = "return";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "return")
+            );
 
-  {
-    Source src = sourceFromString("true");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "true")));
-    deleteSource(&src);
-  }
+  in = "true";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "true")
+            );
 
-  {
-    Source src = sourceFromString("false");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "false")));
-    deleteSource(&src);
-  }
+  in = "false";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "false")
+            );
 
-  {
-    Source src = sourceFromString("var");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 3), "var")));
-    deleteSource(&src);
-  }
+  in = "var";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 3), "var")
+            );
 
-  {
-    Source src = sourceFromString("const");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "const")));
-    deleteSource(&src);
-  }
+  in = "const";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "const")
+            );
 
-  {
-    Source src = sourceFromString("func");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "func")));
-    deleteSource(&src);
-  }
+  in = "func";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "func")
+            );
 
-  {
-    Source src = sourceFromString("struct");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "struct")));
-    deleteSource(&src);
-  }
+  in = "struct";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "struct")
+            );
 
-  {
-    Source src = sourceFromString("_");
-    Lexer lexer = lexerFromSource(src);
-    Token t = nextToken(&lexer);
-    TEST(assertEqualToken(t, token(TOKEN_KEYWORD, loc(1, 1), loc(1, 1), "_")));
-    deleteSource(&src);
-  }
-
-  return result;
-}
-
-
-#define createTest(s, in, n, ...) __createTest(__FILE__, __LINE__, s, in, n, __VA_ARGS__)
-static void __createTest(const char* file, int line, TestSuite* suite, const char* input,
-                         int numTokens, ...) {
-  char testName[100];
-  snprintf(testName, sizeof(testName), "parse \"%s\"", input);
-  printf("%s:%d %s ...\n", file, line, testName);
+  in = "_";
+  createTest(suite, in, 1,
+             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 1), "_")
+            );
 }
 
 
 TestResult lexer_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<lexer>", "Test lexer.");
-  addTest(&suite, &testCreation,     "testCreation");
-  addTest(&suite, &testEndOfLine,    "testEndOfLine");
-  addTest(&suite, &testTokenName,    "testTokenName");
-  addTest(&suite, &testTokenInt,     "testTokenInt");
-  addTest(&suite, &testTokenHexInt,  "testTokenHexInt");
-  addTest(&suite, &testTokenBinInt,  "testTokenBinInt");
-  addTest(&suite, &testWhitespaces,  "testWhitespaces");
-  addTest(&suite, &testTokenKeyword, "testTokenKeyword");
+  addTest(&suite, &testCreation, "testCreation");
+  addTestsEndOfLine(&suite);
+  addTestsTokenName(&suite);
+  addTestsTokenInt(&suite);
+  addTestsTokenHexInt(&suite);
+  addTestsTokenBinInt(&suite);
+  addTestsWhitespaces(&suite);
+  addTestsTokenKeyword(&suite);
   TestResult result = run(&suite, verbosity);
+
   deleteSuite(&suite);
+  for (int i = 0; i < sbufLength(g_testCases); i++) {
+    free(g_testCases[i].name);
+    free(g_testCases[i].input);
+    sbufFree(g_testCases[i].tokens);
+  }
+  sbufFree(g_testCases);
+
   return result;
 }

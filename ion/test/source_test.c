@@ -1,9 +1,8 @@
 #include "cunit.h"
-
-#include "source.h"
-
 #define FILENAME "__source__.tmp"
 #include "util.h"
+
+#include "source.h"
 
 
 static TestResult testCreationFromString() {
