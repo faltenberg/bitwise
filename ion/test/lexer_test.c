@@ -186,28 +186,27 @@ static void addTestsEndOfLine(TestSuite* suite) {
 
   in = "";
   createTest(suite, in, 2,
-             token(TOKEN_EOF, loc(1, 1), loc(1, 1), ""),
-             token(TOKEN_EOF, loc(1, 1), loc(1, 1), "")
-            );
+    token(TOKEN_EOF, loc(1, 1), loc(1, 1), ""),
+    token(TOKEN_EOF, loc(1, 1), loc(1, 1), "")
+  );
 
   in = "\\0";
   createTest(suite, in, 2,
-             token(TOKEN_EOF, loc(1, 1), loc(1, 1), ""),
-             token(TOKEN_EOF, loc(1, 1), loc(1, 1), "")
-            );
+    token(TOKEN_EOF, loc(1, 1), loc(1, 1), ""),
+    token(TOKEN_EOF, loc(1, 1), loc(1, 1), "")
+  );
 
   in = "\\n";
   createTest(suite, in, 2,
-             token(TOKEN_EOF, loc(2, 1), loc(2, 1), ""),
-             token(TOKEN_EOF, loc(2, 1), loc(2, 1), "")
-            );
+    token(TOKEN_EOF, loc(2, 1), loc(2, 1), ""),
+    token(TOKEN_EOF, loc(2, 1), loc(2, 1), "")
+  );
 
-  in = "x";
-  createTest(suite, in, 3,
-             token(TOKEN_NAME, loc(1, 1), loc(1, 1), "x"),
-             token(TOKEN_EOF, loc(1, 2), loc(1, 2), ""),
-             token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")
-            );
+  in = " ";
+  createTest(suite, in, 2,
+    token(TOKEN_EOF, loc(1, 2), loc(1, 2), ""),
+    token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")
+  );
 }
 
 
@@ -216,48 +215,48 @@ static void addTestsTokenName(TestSuite* suite) {
 
   in = "x";
   createTest(suite, in, 1,
-             token(TOKEN_NAME, loc(1, 1), loc(1, 1), "x")
-            );
+    token(TOKEN_NAME, loc(1, 1), loc(1, 1), "x")
+  );
 
   in = "abc";
   createTest(suite, in, 1,
-             token(TOKEN_NAME, loc(1, 1), loc(1, 3), "abc")
-            );
+    token(TOKEN_NAME, loc(1, 1), loc(1, 3), "abc")
+  );
 
   in = "ABC";
   createTest(suite, in, 1,
-             token(TOKEN_NAME, loc(1, 1), loc(1, 3), "ABC")
-            );
+    token(TOKEN_NAME, loc(1, 1), loc(1, 3), "ABC")
+  );
 
   in = "a_b";
   createTest(suite, in, 1,
-             token(TOKEN_NAME, loc(1, 1), loc(1, 3), "a_b")
-            );
+    token(TOKEN_NAME, loc(1, 1), loc(1, 3), "a_b")
+  );
 
   in = "_";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 1), "_")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 1), "_")
+  );
 
   in = "x_";
   createTest(suite, in, 1,
-             token(TOKEN_NAME, loc(1, 1), loc(1, 2), "x_")
-            );
+    token(TOKEN_NAME, loc(1, 1), loc(1, 2), "x_")
+  );
 
   in = "_x";
   createTest(suite, in, 1,
-             token(TOKEN_NAME, loc(1, 1), loc(1, 2), "_x")
-            );
+    token(TOKEN_NAME, loc(1, 1), loc(1, 2), "_x")
+  );
 
   in = "_123";
   createTest(suite, in, 1,
-             token(TOKEN_NAME, loc(1, 1), loc(1, 4), "_123")
-            );
+    token(TOKEN_NAME, loc(1, 1), loc(1, 4), "_123")
+  );
 
   in = "ab123c";
   createTest(suite, in, 1,
-             token(TOKEN_NAME, loc(1, 1), loc(1, 6), "ab123c")
-            );
+    token(TOKEN_NAME, loc(1, 1), loc(1, 6), "ab123c")
+  );
 }
 
 
@@ -266,38 +265,38 @@ static void addTestsTokenInt(TestSuite* suite) {
 
   in = "0";
   createTest(suite, in, 1,
-             token(TOKEN_INT, loc(1, 1), loc(1, 1), "0")
-            );
+    token(TOKEN_INT, loc(1, 1), loc(1, 1), "0")
+  );
 
   in = "1";
   createTest(suite, in, 1,
-             token(TOKEN_INT, loc(1, 1), loc(1, 1), "1")
-            );
+    token(TOKEN_INT, loc(1, 1), loc(1, 1), "1")
+  );
 
   in = "123";
   createTest(suite, in, 1,
-             token(TOKEN_INT, loc(1, 1), loc(1, 3), "123")
-            );
+    token(TOKEN_INT, loc(1, 1), loc(1, 3), "123")
+  );
 
   in = "0123abc";
   createTest(suite, in, 1,
-             token(TOKEN_ERROR, loc(1, 1), loc(1, 7), "")
-            );
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 7), "")
+  );
 
   in = "0__2_";
   createTest(suite, in, 1,
-             token(TOKEN_INT, loc(1, 1), loc(1, 5), "0__2_")
-            );
+    token(TOKEN_INT, loc(1, 1), loc(1, 5), "0__2_")
+  );
 
   in = "1__2_";
   createTest(suite, in, 1,
-             token(TOKEN_INT, loc(1, 1), loc(1, 5), "1__2_")
-            );
+    token(TOKEN_INT, loc(1, 1), loc(1, 5), "1__2_")
+  );
 
   in = "_123";
   createTest(suite, in, 1,
-             token(TOKEN_NAME, loc(1, 1), loc(1, 4), "_123")
-            );
+    token(TOKEN_NAME, loc(1, 1), loc(1, 4), "_123")
+  );
 }
 
 
@@ -306,48 +305,48 @@ static void addTestsTokenHexInt(TestSuite* suite) {
 
   in = "0x12345abcdef67890";
   createTest(suite, in, 1,
-             token(TOKEN_INT, loc(1, 1), loc(1, 18), "0x12345abcdef67890")
-            );
+    token(TOKEN_INT, loc(1, 1), loc(1, 18), "0x12345abcdef67890")
+  );
 
   in = "0XABCDEF1234abcdef";
   createTest(suite, in, 1,
-             token(TOKEN_INT, loc(1, 1), loc(1, 18), "0XABCDEF1234abcdef")
-            );
+    token(TOKEN_INT, loc(1, 1), loc(1, 18), "0XABCDEF1234abcdef")
+  );
 
   in = "1x123";
   createTest(suite, in, 1,
-             token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
-            );
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
+  );
 
   in = "00x123";
   createTest(suite, in, 1,
-             token(TOKEN_ERROR, loc(1, 1), loc(1, 6), "")
-            );
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 6), "")
+  );
 
   in = "0xABCg123";
   createTest(suite, in, 1,
-             token(TOKEN_ERROR, loc(1, 1), loc(1, 9), "")
-            );
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 9), "")
+  );
 
   in = "0x";
   createTest(suite, in, 1,
-             token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")
-            );
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")
+  );
 
   in = "0xABCD_1234";
   createTest(suite, in, 1,
-             token(TOKEN_INT, loc(1, 1), loc(1, 11), "0xABCD_1234")
-            );
+    token(TOKEN_INT, loc(1, 1), loc(1, 11), "0xABCD_1234")
+  );
 
   in = "0x_";
   createTest(suite, in, 1,
-             token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "0x_")
-            );
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "0x_")
+  );
 
   in = "0X__12AB__";
   createTest(suite, in, 1,
-             token(TOKEN_INT, loc(1, 1), loc(1, 10), "0X__12AB__")
-            );
+    token(TOKEN_INT, loc(1, 1), loc(1, 10), "0X__12AB__")
+  );
 }
 
 
@@ -356,38 +355,38 @@ static void addTestsTokenBinInt(TestSuite* suite) {
 
   in = "0b0101";
   createTest(suite, in, 1,
-             token(TOKEN_INT, loc(1, 1), loc(1, 6), "0b0101")
-            );
+    token(TOKEN_INT, loc(1, 1), loc(1, 6), "0b0101")
+  );
 
   in = "0B1100";
   createTest(suite, in, 1,
-             token(TOKEN_INT, loc(1, 1), loc(1, 6), "0B1100")
-            );
+    token(TOKEN_INT, loc(1, 1), loc(1, 6), "0B1100")
+  );
 
   in = "1b0011";
   createTest(suite, in, 1,
-             token(TOKEN_ERROR, loc(1, 1), loc(1, 6), "")
-            );
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 6), "")
+  );
 
   in = "00b0011";
   createTest(suite, in, 1,
-             token(TOKEN_ERROR, loc(1, 1), loc(1, 7), "")
-            );
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 7), "")
+  );
 
   in = "0b012";
   createTest(suite, in, 1,
-             token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
-            );
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
+  );
 
   in = "0b0a1";
   createTest(suite, in, 1,
-             token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
-            );
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
+  );
 
   in = "0b";
   createTest(suite, in, 1,
-             token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")
-            );
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")
+  );
 }
 
 
@@ -396,29 +395,33 @@ static void addTestsWhitespaces(TestSuite* suite) {
 
   in = " ";
   createTest(suite, in, 1,
-             token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")
-            );
+    token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")
+  );
 
   in = "  ";
   createTest(suite, in, 1,
-             token(TOKEN_EOF, loc(1, 3), loc(1, 3), "")
-            );
+    token(TOKEN_EOF, loc(1, 3), loc(1, 3), "")
+  );
 
   in = "\\t";
   createTest(suite, in, 1,
-             token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")
-            );
+    token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")
+  );
 
-  in = " \\r\\n\\t";
+  in = "\\r";
   createTest(suite, in, 1,
-             token(TOKEN_EOF, loc(2, 2), loc(2, 2), "")
-            );
+    token(TOKEN_EOF, loc(1, 2), loc(1, 2), "")
+  );
 
-  in = "123 xyz";
-  createTest(suite, in, 2,
-             token(TOKEN_INT, loc(1, 1), loc(1, 3), "123"),
-             token(TOKEN_NAME, loc(1, 5), loc(1, 7), "xyz")
-            );
+  in = "\\n";
+  createTest(suite, in, 1,
+    token(TOKEN_EOF, loc(2, 1), loc(2, 1), "")
+  );
+
+  in = "\\r\\n";
+  createTest(suite, in, 1,
+    token(TOKEN_EOF, loc(2, 1), loc(2, 1), "")
+  );
 }
 
 
@@ -427,88 +430,425 @@ static void addTestsTokenKeyword(TestSuite* suite) {
 
   in = "if";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 2), "if")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 2), "if")
+  );
 
   in = "else";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "else")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "else")
+  );
 
   in = "do";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 2), "do")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 2), "do")
+  );
 
   in = "while";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "while")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "while")
+  );
 
   in = "for";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 3), "for")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 3), "for")
+  );
 
   in = "switch";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "switch")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "switch")
+  );
 
   in = "case";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "case")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "case")
+  );
 
   in = "break";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "break")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "break")
+  );
 
   in = "continue";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 8), "continue")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 8), "continue")
+  );
 
   in = "return";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "return")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "return")
+  );
 
   in = "true";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "true")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "true")
+  );
 
   in = "false";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "false")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "false")
+  );
 
   in = "var";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 3), "var")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 3), "var")
+  );
 
   in = "const";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "const")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 5), "const")
+  );
 
   in = "func";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "func")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 4), "func")
+  );
 
   in = "struct";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "struct")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 6), "struct")
+  );
 
   in = "_";
   createTest(suite, in, 1,
-             token(TOKEN_KEYWORD, loc(1, 1), loc(1, 1), "_")
-            );
+    token(TOKEN_KEYWORD, loc(1, 1), loc(1, 1), "_")
+  );
+}
+
+
+static void addTestsTokenSeparator(TestSuite* suite) {
+  const char* in;
+
+  in = "(";
+  createTest(suite, in, 1,
+    token(TOKEN_SEP, loc(1, 1), loc(1, 1), "(")
+  );
+
+  in = ")";
+  createTest(suite, in, 1,
+    token(TOKEN_SEP, loc(1, 1), loc(1, 1), ")")
+  );
+
+  in = "[";
+  createTest(suite, in, 1,
+    token(TOKEN_SEP, loc(1, 1), loc(1, 1), "[")
+  );
+
+  in = "]";
+  createTest(suite, in, 1,
+    token(TOKEN_SEP, loc(1, 1), loc(1, 1), "]")
+  );
+
+  in = "{";
+  createTest(suite, in, 1,
+    token(TOKEN_SEP, loc(1, 1), loc(1, 1), "{")
+  );
+
+  in = "}";
+  createTest(suite, in, 1,
+    token(TOKEN_SEP, loc(1, 1), loc(1, 1), "}")
+  );
+
+  in = ",";
+  createTest(suite, in, 1,
+    token(TOKEN_SEP, loc(1, 1), loc(1, 1), ",")
+  );
+
+  in = ";";
+  createTest(suite, in, 1,
+    token(TOKEN_SEP, loc(1, 1), loc(1, 1), ";")
+  );
+
+  in = ":";
+  createTest(suite, in, 1,
+    token(TOKEN_SEP, loc(1, 1), loc(1, 1), ":")
+  );
+
+  in = ".";
+  createTest(suite, in, 1,
+    token(TOKEN_SEP, loc(1, 1), loc(1, 1), ".")
+  );
+}
+
+
+static void addTestsTokenOperator(TestSuite* suite) {
+  const char* in;
+
+  in = "+";
+  createTest(suite, in, 1,
+    token(TOKEN_OP, loc(1, 1), loc(1, 1), "+")
+  );
+
+  in = "-";
+  createTest(suite, in, 1,
+    token(TOKEN_OP, loc(1, 1), loc(1, 1), "-")
+  );
+
+  in = "*";
+  createTest(suite, in, 1,
+    token(TOKEN_OP, loc(1, 1), loc(1, 1), "*")
+  );
+
+  in = "/";
+  createTest(suite, in, 1,
+    token(TOKEN_OP, loc(1, 1), loc(1, 1), "/")
+  );
+
+  in = "%";
+  createTest(suite, in, 1,
+    token(TOKEN_OP, loc(1, 1), loc(1, 1), "%")
+  );
+}
+
+
+static void addTestsTokenComment(TestSuite* suite) {
+  const char* in;
+
+  in = "//";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 2), "//")
+  );
+
+  in = "// x";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 4), "// x")
+  );
+
+  in = "//\\n";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 2), "//")
+  );
+
+  in = "// //";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 5), "// //")
+  );
+
+  in = "//\\nx";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 2), "//")
+  );
+
+  in = "/* */";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 5), "/* */")
+  );
+
+  in = "/*";
+  createTest(suite, in, 1,
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")
+  );
+
+  in = "/**";
+  createTest(suite, in, 1,
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "")
+  );
+
+  in = "/**/";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 4), "/**/")
+  );
+
+  in = "/*/";
+  createTest(suite, in, 1,
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "")
+  );
+
+  in = "/** /";
+  createTest(suite, in, 1,
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
+  );
+
+  in = "/*\\n*/";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(2, 2), "/*\n*/")
+  );
+
+  in = "/*\\n";
+  createTest(suite, in, 1,
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "/*\n")
+  );
+
+  in = "/* *\\n/";
+  createTest(suite, in, 1,
+    token(TOKEN_ERROR, loc(1, 1), loc(2, 1), "/* *\n/")
+  );
+
+  in = "/*//*/";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 6), "/*//*/")
+  );
+
+  in = "/*/**/";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 6), "/*/**/")
+  );
+
+  in = "/**/*/";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 4), "/**/")
+  );
+
+  in = "/*/**/*/";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 6), "/*/**/")
+  );
+
+  in = "// /**/";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 7), "// /**/")
+  );
+
+  in = "// /*\\n*/";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(1, 5), "// /*")
+  );
+
+  in = "/*\\n//*/";
+  createTest(suite, in, 1,
+    token(TOKEN_COMMENT, loc(1, 1), loc(2, 4), "/*\n//*/")
+  );
+}
+
+
+static void addTestsDeclaration(TestSuite* suite) {
+  const char* in;
+
+  in = "var x : int;  // x = 0";
+  createTest(suite, in, 7,
+    token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "var"),
+    token(TOKEN_NAME,    loc(1,  5), loc(1,  5), "x"),
+    token(TOKEN_SEP,     loc(1,  7), loc(1,  7), ":"),
+    token(TOKEN_NAME,    loc(1,  9), loc(1, 11), "int"),
+    token(TOKEN_SEP,     loc(1, 12), loc(1, 12), ";"),
+    token(TOKEN_COMMENT, loc(1, 15), loc(1, 22), "// x = 0"),
+    token(TOKEN_EOF,     loc(1, 23), loc(1, 23), "")
+  );
+
+  in = "var x : int = 123;  /* x = 123 */";
+  createTest(suite, in, 9,
+    token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "var"),
+    token(TOKEN_NAME,    loc(1,  5), loc(1,  5), "x"),
+    token(TOKEN_SEP,     loc(1,  7), loc(1,  7), ":"),
+    token(TOKEN_NAME,    loc(1,  9), loc(1, 11), "int"),
+    token(TOKEN_SEP,     loc(1, 13), loc(1, 13), "="),
+    token(TOKEN_INT,     loc(1, 15), loc(1, 17), "123"),
+    token(TOKEN_SEP,     loc(1, 18), loc(1, 18), ";"),
+    token(TOKEN_COMMENT, loc(1, 21), loc(1, 33), "/* x = 123 */"),
+    token(TOKEN_EOF,     loc(1, 34), loc(1, 34), "")
+  );
+
+  in = "var mask := 0b1010_1011;";
+  createTest(suite, in, 7,
+    token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "var"),
+    token(TOKEN_NAME,    loc(1,  5), loc(1,  8), "mask"),
+    token(TOKEN_SEP,     loc(1, 10), loc(1, 10), ":"),
+    token(TOKEN_SEP,     loc(1, 11), loc(1, 11), "="),
+    token(TOKEN_INT,     loc(1, 13), loc(1, 23), "0b1010_1011"),
+    token(TOKEN_SEP,     loc(1, 24), loc(1, 24), ";"),
+    token(TOKEN_EOF,     loc(1, 25), loc(1, 25), "")
+  );
+
+  in = "const ADDR := 0x_AB40_;";
+  createTest(suite, in, 7,
+    token(TOKEN_KEYWORD, loc(1,  1), loc(1,  5), "const"),
+    token(TOKEN_NAME,    loc(1,  7), loc(1, 10), "ADDR"),
+    token(TOKEN_SEP,     loc(1, 12), loc(1, 12), ":"),
+    token(TOKEN_SEP,     loc(1, 13), loc(1, 13), "="),
+    token(TOKEN_INT,     loc(1, 15), loc(1, 22), "0x_AB40_"),
+    token(TOKEN_SEP,     loc(1, 23), loc(1, 23), ";"),
+    token(TOKEN_EOF,     loc(1, 24), loc(1, 24), "")
+  );
+
+  in = "var a_1 := 0x_;";
+  createTest(suite, in, 7,
+    token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "var"),
+    token(TOKEN_NAME,    loc(1,  5), loc(1,  7), "a_1"),
+    token(TOKEN_SEP,     loc(1,  9), loc(1,  9), ":"),
+    token(TOKEN_SEP,     loc(1, 10), loc(1, 10), "="),
+    token(TOKEN_ERROR,   loc(1, 12), loc(1, 14), ""),
+    token(TOKEN_SEP,     loc(1, 15), loc(1, 15), ";"),
+    token(TOKEN_EOF,     loc(1, 16), loc(1, 16), "")
+  );
+
+  in = "func f : () -> int {\\n return -1;\\n }";
+  createTest(suite, in, 14,
+    token(TOKEN_KEYWORD, loc(1,  1), loc(1,  4), "func"),
+    token(TOKEN_NAME,    loc(1,  6), loc(1,  6), "f"),
+    token(TOKEN_SEP,     loc(1,  8), loc(1,  8), ":"),
+    token(TOKEN_SEP,     loc(1, 10), loc(1, 10), "("),
+    token(TOKEN_SEP,     loc(1, 11), loc(1, 11), ")"),
+    token(TOKEN_SEP,     loc(1, 13), loc(1, 14), "->"),
+    token(TOKEN_NAME,    loc(1, 16), loc(1, 18), "int"),
+    token(TOKEN_SEP,     loc(1, 20), loc(1, 20), "{"),
+    token(TOKEN_KEYWORD, loc(2,  2), loc(2,  7), "return"),
+    token(TOKEN_OP,      loc(2,  9), loc(2,  9), "-"),
+    token(TOKEN_INT,     loc(2, 10), loc(2, 10), "1"),
+    token(TOKEN_SEP,     loc(2, 11), loc(2, 11), ";"),
+    token(TOKEN_SEP,     loc(3,  2), loc(3,  2), "}"),
+    token(TOKEN_EOF,     loc(3,  3), loc(3,  3), "")
+  );
+
+  in = "func f : (a: int, b: int) -> int { return a+b; }";
+  createTest(suite, in, 22,
+    token(TOKEN_KEYWORD, loc(1,  1), loc(1,  4), "func"),
+    token(TOKEN_NAME,    loc(1,  6), loc(1,  6), "f"),
+    token(TOKEN_SEP,     loc(1,  8), loc(1,  8), ":"),
+    token(TOKEN_SEP,     loc(1, 10), loc(1, 10), "("),
+    token(TOKEN_NAME,    loc(1, 11), loc(1, 11), "a"),
+    token(TOKEN_SEP,     loc(1, 12), loc(1, 12), ":"),
+    token(TOKEN_NAME,    loc(1, 14), loc(1, 16), "int"),
+    token(TOKEN_SEP,     loc(1, 17), loc(1, 17), ","),
+    token(TOKEN_NAME,    loc(1, 19), loc(1, 19), "b"),
+    token(TOKEN_SEP,     loc(1, 20), loc(1, 20), ":"),
+    token(TOKEN_NAME,    loc(1, 22), loc(1, 24), "int"),
+    token(TOKEN_SEP,     loc(1, 25), loc(1, 25), ")"),
+    token(TOKEN_SEP,     loc(1, 27), loc(1, 28), "->"),
+    token(TOKEN_NAME,    loc(1, 30), loc(1, 32), "int"),
+    token(TOKEN_SEP,     loc(1, 34), loc(1, 34), "{"),
+    token(TOKEN_KEYWORD, loc(1, 36), loc(1, 41), "return"),
+    token(TOKEN_NAME,    loc(1, 43), loc(1, 43), "a"),
+    token(TOKEN_OP,      loc(1, 44), loc(1, 44), "+"),
+    token(TOKEN_NAME,    loc(1, 45), loc(1, 45), "b"),
+    token(TOKEN_SEP,     loc(1, 46), loc(1, 46), ";"),
+    token(TOKEN_SEP,     loc(1, 48), loc(1, 48), "}"),
+    token(TOKEN_EOF,     loc(1, 49), loc(1, 49), "")
+  );
+
+  in = "struct Vec2 : {\\n x: int; y: int;\\n }";
+  createTest(suite, in, 14,
+    token(TOKEN_KEYWORD, loc(1,  1), loc(1,  6), "struct"),
+    token(TOKEN_NAME,    loc(1,  8), loc(1, 11), "Vec2"),
+    token(TOKEN_SEP,     loc(1, 13), loc(1, 13), ":"),
+    token(TOKEN_SEP,     loc(1, 15), loc(1, 15), "{"),
+    token(TOKEN_NAME,    loc(2,  2), loc(2,  2), "x"),
+    token(TOKEN_SEP,     loc(2,  3), loc(2,  3), ":"),
+    token(TOKEN_NAME,    loc(2,  5), loc(2,  7), "int"),
+    token(TOKEN_SEP,     loc(2,  8), loc(2,  8), ";"),
+    token(TOKEN_NAME,    loc(2, 10), loc(2, 10), "y"),
+    token(TOKEN_SEP,     loc(2, 11), loc(2, 11), ":"),
+    token(TOKEN_NAME,    loc(2, 13), loc(2, 15), "int"),
+    token(TOKEN_SEP,     loc(2, 16), loc(2, 16), ";"),
+    token(TOKEN_SEP,     loc(3,  2), loc(3,  2), "}"),
+    token(TOKEN_EOF,     loc(3,  3), loc(3,  3), "")
+  );
+
+  in = "var v: int[] = [1, 2];";
+  createTest(suite, in, 14,
+    token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "var"),
+    token(TOKEN_NAME,    loc(1,  5), loc(1,  5), "v"),
+    token(TOKEN_SEP,     loc(1,  6), loc(1,  6), ":"),
+    token(TOKEN_NAME,    loc(1,  8), loc(1, 10), "int"),
+    token(TOKEN_SEP,     loc(1, 11), loc(1, 11), "["),
+    token(TOKEN_SEP,     loc(1, 12), loc(1, 12), "]"),
+    token(TOKEN_SEP,     loc(1, 14), loc(1, 14), "="),
+    token(TOKEN_SEP,     loc(1, 16), loc(1, 16), "["),
+    token(TOKEN_INT,     loc(1, 17), loc(1, 17), "1"),
+    token(TOKEN_SEP,     loc(1, 18), loc(1, 18), ","),
+    token(TOKEN_INT,     loc(1, 20), loc(1, 20), "2"),
+    token(TOKEN_SEP,     loc(1, 21), loc(1, 21), "]"),
+    token(TOKEN_SEP,     loc(1, 22), loc(1, 22), ";"),
+    token(TOKEN_EOF,     loc(1, 23), loc(1, 23), "")
+  );
 }
 
 
@@ -522,6 +862,10 @@ TestResult lexer_alltests(PrintLevel verbosity) {
   addTestsTokenBinInt(&suite);
   addTestsWhitespaces(&suite);
   addTestsTokenKeyword(&suite);
+  addTestsTokenSeparator(&suite);
+  addTestsTokenOperator(&suite);
+  addTestsTokenComment(&suite);
+  addTestsDeclaration(&suite);
   TestResult result = run(&suite, verbosity);
 
   deleteSuite(&suite);

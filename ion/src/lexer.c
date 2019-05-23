@@ -43,17 +43,16 @@ static char peekChar(Lexer* lexer) {
 Token nextToken(Lexer* lexer) {
   Token token = (Token){ .kind=TOKEN_NONE, .source=&lexer->source,
                          .start=loc(0, 0), .end=loc(0, 0), .chars=stringFromArray("") };
-
-  char c = peekChar(lexer);
-  while (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+  for (char c = peekChar(lexer);
+       c == ' ' || c == '\t' || c == '\r' || c == '\n';
+       c = peekChar(lexer)) {
     nextChar(lexer);
-    c = peekChar(lexer);
   }
 
   const char* start = &lexer->source.content.chars[lexer->index];
-  char currentChar = nextChar(lexer);
+  char c = nextChar(lexer);
   token.start = lexer->currentLoc;
-  switch (currentChar) {
+  switch (c) {
     case '\0':
     {
       token.kind = TOKEN_EOF;
@@ -70,8 +69,8 @@ Token nextToken(Lexer* lexer) {
     case '_':
     {
       token.kind = TOKEN_NAME;
-      while (isalnum(peekChar(lexer)) || peekChar(lexer) == '_') {
-        currentChar = nextChar(lexer);
+      for (char c = peekChar(lexer); isalnum(c) || c == '_'; c = peekChar(lexer)) {
+        nextChar(lexer);
       }
       string name = stringFromRange(start, &lexer->source.content.chars[lexer->index]);
       if (isKeyword(name)) {
@@ -79,60 +78,109 @@ Token nextToken(Lexer* lexer) {
       }
     } break;
 
-
     case '0':
     {
       token.kind = TOKEN_INT;
       if (peekChar(lexer) == 'x' || peekChar(lexer) == 'X') {
         token.kind = TOKEN_ERROR;  // assume error if loop is not entered (thus no digits)
-        currentChar = nextChar(lexer);
+        nextChar(lexer);
         bool hasDigit = false;
-        while (isdigit(peekChar(lexer)) || peekChar(lexer) == '_' ||
-               (peekChar(lexer) >= 'a' && peekChar(lexer) <= 'f') ||
-               (peekChar(lexer) >= 'A' && peekChar(lexer) <= 'F')) {
+        for (char c = peekChar(lexer);
+             isdigit(c) || c == '_' || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+             c = peekChar(lexer)) {
           token.kind = TOKEN_INT;
-          currentChar = nextChar(lexer);
-          hasDigit |= (currentChar != '_');
+          hasDigit |= (nextChar(lexer) != '_');
         }
         if (!hasDigit || isalpha(peekChar(lexer))) {
           token.kind = TOKEN_ERROR;
           token.chars = stringFromArray("invalid hex integer");
-          while (isalnum(peekChar(lexer)) || peekChar(lexer) == '_') {
-            currentChar = nextChar(lexer);
+          for (char c = peekChar(lexer); isalnum(c) || c == '_'; c = peekChar(lexer)) {
+            nextChar(lexer);
           }
         }
         break;
       }
       if (peekChar(lexer) == 'b' || peekChar(lexer) == 'B') {
         token.kind = TOKEN_ERROR;  // assume error if loop is not entered (thus no digits)
-        currentChar = nextChar(lexer);
-        while (peekChar(lexer) == '0' || peekChar(lexer) == '1') {
+        nextChar(lexer);
+        bool hasDigit = false;
+        for (char c = peekChar(lexer); c == '0' || c == '1' || c == '_';  c = peekChar(lexer)) {
           token.kind = TOKEN_INT;
-          currentChar = nextChar(lexer);
+          hasDigit |= (nextChar(lexer) != '_');
         }
-        if (isalnum(peekChar(lexer))) {
+        if (!hasDigit || isalnum(peekChar(lexer))) {
           token.kind = TOKEN_ERROR;
           token.chars = stringFromArray("invalid bin integer");
-          while (isalnum(peekChar(lexer))) {
-            currentChar = nextChar(lexer);
+          for (char c = peekChar(lexer); isalnum(c) || c == '_'; c = peekChar(lexer)) {
+            nextChar(lexer);
           }
         }
         break;
       }
-    }
+    }  // shall fall trough
 
     case '1':  case '2':  case '3':  case '4':
     case '5':  case '6':  case '7':  case '8':  case '9':
     {
       token.kind = TOKEN_INT;
-      while (isdigit(peekChar(lexer)) || peekChar(lexer) == '_') {
-        currentChar = nextChar(lexer);
+      for (char c = peekChar(lexer); isdigit(c) || c == '_'; c = peekChar(lexer)) {
+        nextChar(lexer);
       }
       if (isalpha(peekChar(lexer))) {
         token.kind = TOKEN_ERROR;
         token.chars = stringFromArray("invalid integer");
-        while (isalnum(peekChar(lexer))) {
-          currentChar = nextChar(lexer);
+        for (char c = peekChar(lexer); isalnum(c); c = peekChar(lexer)) {
+          nextChar(lexer);
+        }
+      }
+    } break;
+
+    case '(':  case ')':  case '[':  case ']':  case '{':  case '}':
+    case ',':  case ';':  case ':':  case '.':  case '=':
+    {
+      token.kind = TOKEN_SEP;
+    } break;
+
+    case '+':  case '*':  case '%':
+    {
+      token.kind = TOKEN_OP;
+    } break;
+
+    case '-':
+    {
+      token.kind = TOKEN_OP;
+      if (peekChar(lexer) == '>') {
+        token.kind = TOKEN_SEP;
+        nextChar(lexer);
+      }
+    } break;
+
+    case '/':
+    {
+      token.kind = TOKEN_OP;
+
+      if (peekChar(lexer) == '/') {  // munch single-line comment
+        token.kind = TOKEN_COMMENT;
+        for (char c = peekChar(lexer); c != '\0' && c != '\n'; c = peekChar(lexer)) {
+          nextChar(lexer);
+        }
+      } else if (peekChar(lexer) == '*') {  // munch multi-line comment
+        nextChar(lexer);
+        for (char c = peekChar(lexer); c != '\0'; c = peekChar(lexer)) {
+          if (peekChar(lexer) == '*') {
+            nextChar(lexer);
+            if (peekChar(lexer) == '/') {
+              token.kind = TOKEN_COMMENT;
+              nextChar(lexer);
+              break;
+            }
+          } else {
+            nextChar(lexer);
+          }
+        }
+        if (token.kind != TOKEN_COMMENT) {
+          token.kind = TOKEN_ERROR;
+          token.chars = stringFromArray("unclosed multi-line comment");
         }
       }
     } break;
@@ -143,11 +191,15 @@ Token nextToken(Lexer* lexer) {
       // NOTE: make sure not to overwrite the message later before return!
       token.kind = TOKEN_ERROR;
       token.chars = stringFromArray("could not parse character '$$$' to token");
+      nextChar(lexer);
     } break;
   }
+
   token.end = lexer->currentLoc;
   const char* end = &lexer->source.content.chars[lexer->index];
-  token.chars = stringFromRange(start, (token.kind == TOKEN_EOF) ? end-1 : end);
+  if (token.kind != TOKEN_ERROR) {
+    token.chars = stringFromRange(start, (token.kind == TOKEN_EOF) ? end-1 : end);
+  }
 
   return token;
 }
