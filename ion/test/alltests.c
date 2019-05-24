@@ -16,6 +16,6 @@ int main() {
   result = unite(result, str_alltests(SPARSE));
   result = unite(result, strintern_alltests(SPARSE));
   result = unite(result, source_alltests(SPARSE));
-  result = unite(result, lexer_alltests(VERBOSE));
+  result = unite(result, lexer_alltests(SUMMARY));
   printResult(result);
 }

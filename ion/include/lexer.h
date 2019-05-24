@@ -10,6 +10,7 @@ typedef struct Lexer {
   TokenLoc currentLoc;
   TokenLoc nextLoc;
   int      index;
+  char     currentChar;
 } Lexer;
 
 

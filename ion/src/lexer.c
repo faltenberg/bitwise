@@ -9,25 +9,27 @@ static TokenLoc loc(int line, int pos) {
 
 
 Lexer lexerFromSource(Source src) {
-  return (Lexer){ .source=src, .index=0, .currentLoc=loc(0, 0), .nextLoc=loc(1, 1) };
+  return (Lexer){ .source=src, .currentLoc=loc(0, 0), .nextLoc=loc(1, 1),
+                  .index=0, .currentChar='\0'
+                };
 }
 
 
 static char nextChar(Lexer* lexer) {
-  char c = lexer->source.content.chars[lexer->index];
+  lexer->currentChar = lexer->source.content.chars[lexer->index];
   if (lexer->index < lexer->source.content.len) {
     lexer->index++;
   }
 
   lexer->currentLoc = lexer->nextLoc;
-  if (c == '\n') {
+  if (lexer->currentChar == '\n') {
     lexer->nextLoc.line++;
     lexer->nextLoc.pos = 1;
-  } else if (c != '\0') {
+  } else if (lexer->currentChar != '\0') {
     lexer->nextLoc.pos++;
   }
 
-  return c;
+  return lexer->currentChar;
 }
 
 
@@ -136,22 +138,60 @@ Token nextToken(Lexer* lexer) {
     } break;
 
     case '(':  case ')':  case '[':  case ']':  case '{':  case '}':
-    case ',':  case ';':  case ':':  case '.':  case '=':
+    case ',':  case ';':  case ':':  case '.':
     {
       token.kind = TOKEN_SEP;
     } break;
 
-    case '+':  case '*':  case '%':
+    case '!':
+    {
+      token.kind = TOKEN_OP;
+      if (peekChar(lexer) == '=') {
+        nextChar(lexer);
+      }
+    } break;
+
+    case '<':  case '>':
+    {
+      token.kind = TOKEN_OP;
+      if (peekChar(lexer) == '=') {
+        nextChar(lexer);
+      }
+    } break;
+
+    case '=':
+    {
+      if (peekChar(lexer) == '=') {
+        token.kind = TOKEN_OP;
+        nextChar(lexer);
+      } else {
+        token.kind = TOKEN_SEP;
+      }
+    } break;
+
+    case '+':  case '&':  case '|':
+    {
+      token.kind = TOKEN_OP;
+      if (peekChar(lexer) == lexer->currentChar) {
+        nextChar(lexer);
+      }
+    } break;
+
+    case '*':  case '%':  case '^':  case '~':
     {
       token.kind = TOKEN_OP;
     } break;
 
     case '-':
     {
-      token.kind = TOKEN_OP;
       if (peekChar(lexer) == '>') {
         token.kind = TOKEN_SEP;
         nextChar(lexer);
+      } else {
+        token.kind = TOKEN_OP;
+        if (peekChar(lexer) == lexer->currentChar) {
+          nextChar(lexer);
+        }
       }
     } break;
 
