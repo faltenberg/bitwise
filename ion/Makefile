@@ -1,4 +1,5 @@
-OPT_DEBUG = -O0 -g -Wall
+CC = clang
+OPT_DEBUG   = -O0 -g -Wall
 OPT_RELEASE = -O3
 
 OPT = ${OPT_DEBUG}
@@ -6,7 +7,7 @@ OPT = ${OPT_DEBUG}
 
 
 .PHONY: all
-all: lib exe test_exe
+all: lib exe
 
 
 .PHONY: clean
@@ -14,51 +15,73 @@ clean:
 	rm -rf bin/
 
 
+.PHONY: reset
+reset: clean
+	$(MAKE) -C $(wildcard deps/*/) clean
+
+
 .PHONY: run
-run: exe
+run: bin/ion
 	@echo ""
-	@bin/ion example/demo.ion
+	@$< example/demo.ion
+	@echo "--------------------------------------------------------------------------------"
+
+
+.PHONY: print_sizes
+print_sizes: bin/print_sizes
+	@echo ""
+	@$<
 	@echo "--------------------------------------------------------------------------------"
 
 
 .PHONY: test
-test: test_exe
+test: bin/test
 	@echo ""
-	@bin/test
+	@$<
 	@echo "--------------------------------------------------------------------------------"
 
 
-.PHONY: test_memleak
-test_memleak: test_exe
+.PHONY: memleak
+memleak: bin/test
 	@echo ""
-	@valgrind --leak-check=full bin/test > /dev/null
+	@valgrind --leak-check=full $< > /dev/null
 	@echo "--------------------------------------------------------------------------------"
 
 
 ######################################## INTERNAL ########################################
 
 
+EXE_FILES = src/ion.c src/print_sizes.c
+SRC_FILES = $(filter-out ${EXE_FILES}, $(wildcard src/*.c))
+INC_ARGS  = $(foreach d, include/ $(wildcard deps/*/include/), -I$d)
+LINK_ARGS = $(foreach d, lib/ $(wildcard deps/*/lib/), -L$d)
+LIBS      = $(foreach x, ${LIBNAMES}, -l$x)
+
+
+bin/ion: deps lib
+	$(eval LIBNAMES := )
+	mkdir -p bin/
+	$(CC) ${OPT} ${INC_ARGS} ${LINK_ARGS} -o $@ ${SRC_FILES} src/ion.c ${LIBS}
+
+bin/print_sizes: deps lib
+	$(eval LIBNAMES := )
+	mkdir -p bin/
+	$(CC) ${OPT} ${INC_ARGS} ${LINK_ARGS} -o $@ ${SRC_FILES} src/print_sizes.c ${LIBS}
+
+bin/test: deps lib
+	$(eval LIBNAMES := cunit)
+	mkdir -p bin/
+	$(CC) ${OPT} ${INC_ARGS} ${LINK_ARGS} -o $@ ${SRC_FILES} test/*.c ${LIBS}
+
+
+.PHONY: exe
+exe: bin/print_sizes bin/ion
+
+
 .PHONY: lib
 lib: deps
 
 
-.PHONY: exe
-exe: deps lib
-	mkdir -p bin/
-	clang ${OPT} -Iinclude/ -Ideps/ -o bin/ion src/*.c
-
-
 .PHONY: deps
 deps:
-
-
-.PHONY: test_exe
-test_exe: lib test_deps
-	$(eval SRC_FILES := $(filter-out src/ion.c, $(wildcard src/*.c)) )
-	mkdir -p bin/
-	clang ${OPT} -Iinclude/ -Ideps/cunit/include/ -Ldeps/cunit/lib/ -o bin/test test/*.c ${SRC_FILES} -lcunit
-
-
-.PHONY: test_deps
-test_deps:
-	$(MAKE) -C ./deps/cunit/
+	$(MAKE) -C $(wildcard deps/*/)
