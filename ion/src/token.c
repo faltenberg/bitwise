@@ -17,30 +17,7 @@ string str(TokenKind kind) {
       return stringFromArray("TOKEN_NAME");
     case TOKEN_KEYWORD:
       return stringFromArray("TOKEN_KEYWORD");
-    case TOKEN_OP:
-      return stringFromArray("TOKEN_OP");
-    case TOKEN_SEP:
-      return stringFromArray("TOKEN_SEP");
+    case TOKEN_SYMBOL:
+      return stringFromArray("TOKEN_SYMBOL");
   }
-}
-
-
-bool isKeyword(string s) {
-  return cstrequal(s, "if") ||
-         cstrequal(s, "else") ||
-         cstrequal(s, "do") ||
-         cstrequal(s, "while") ||
-         cstrequal(s, "for") ||
-         cstrequal(s, "switch") ||
-         cstrequal(s, "case") ||
-         cstrequal(s, "break") ||
-         cstrequal(s, "continue") ||
-         cstrequal(s, "return") ||
-         cstrequal(s, "true") ||
-         cstrequal(s, "false") ||
-         cstrequal(s, "var") ||
-         cstrequal(s, "const") ||
-         cstrequal(s, "func") ||
-         cstrequal(s, "struct") ||
-         cstrequal(s, "_");
 }

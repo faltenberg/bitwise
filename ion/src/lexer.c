@@ -8,16 +8,37 @@ static TokenLoc loc(int line, int pos) {
 }
 
 
-Lexer lexerFromSource(Source src) {
-  return (Lexer){ .source=src, .currentLoc=loc(0, 0), .nextLoc=loc(1, 1),
-                  .index=0, .currentChar='\0'
+Lexer lexerFromSource(const Source* src) {
+  return (Lexer){ .source=src, .index=0, .currentChar='\0',
+                  .currentLoc=loc(0, 0), .nextLoc=loc(1, 1)
                 };
 }
 
 
+static bool isKeyword(string s) {
+  return cstrequal(s, "if") ||
+         cstrequal(s, "else") ||
+         cstrequal(s, "do") ||
+         cstrequal(s, "while") ||
+         cstrequal(s, "for") ||
+         cstrequal(s, "switch") ||
+         cstrequal(s, "case") ||
+         cstrequal(s, "break") ||
+         cstrequal(s, "continue") ||
+         cstrequal(s, "return") ||
+         cstrequal(s, "true") ||
+         cstrequal(s, "false") ||
+         cstrequal(s, "var") ||
+         cstrequal(s, "const") ||
+         cstrequal(s, "func") ||
+         cstrequal(s, "struct") ||
+         cstrequal(s, "_");
+}
+
+
 static char nextChar(Lexer* lexer) {
-  lexer->currentChar = lexer->source.content.chars[lexer->index];
-  if (lexer->index < lexer->source.content.len) {
+  lexer->currentChar = lexer->source->content.chars[lexer->index];
+  if (lexer->index < lexer->source->content.len) {
     lexer->index++;
   }
 
@@ -34,8 +55,8 @@ static char nextChar(Lexer* lexer) {
 
 
 static char peekChar(Lexer* lexer) {
-  if (lexer->index < lexer->source.content.len) {
-    return lexer->source.content.chars[lexer->index];
+  if (lexer->index < lexer->source->content.len) {
+    return lexer->source->content.chars[lexer->index];
   } else {
     return '\0';
   }
@@ -43,7 +64,7 @@ static char peekChar(Lexer* lexer) {
 
 
 Token nextToken(Lexer* lexer) {
-  Token token = (Token){ .kind=TOKEN_NONE, .source=&lexer->source,
+  Token token = (Token){ .kind=TOKEN_NONE, .source=lexer->source,
                          .start=loc(0, 0), .end=loc(0, 0), .chars=stringFromArray("") };
   for (char c = peekChar(lexer);
        c == ' ' || c == '\t' || c == '\r' || c == '\n';
@@ -51,9 +72,10 @@ Token nextToken(Lexer* lexer) {
     nextChar(lexer);
   }
 
-  const char* start = &lexer->source.content.chars[lexer->index];
+  const char* start = &lexer->source->content.chars[lexer->index];
   char c = nextChar(lexer);
   token.start = lexer->currentLoc;
+
   switch (c) {
     case '\0':
     {
@@ -74,12 +96,13 @@ Token nextToken(Lexer* lexer) {
       for (char c = peekChar(lexer); isalnum(c) || c == '_'; c = peekChar(lexer)) {
         nextChar(lexer);
       }
-      string name = stringFromRange(start, &lexer->source.content.chars[lexer->index]);
+      string name = stringFromRange(start, &lexer->source->content.chars[lexer->index]);
       if (isKeyword(name)) {
         token.kind = TOKEN_KEYWORD;
       }
     } break;
 
+    // integer 0, hex and bin integers
     case '0':
     {
       token.kind = TOKEN_INT;
@@ -137,67 +160,50 @@ Token nextToken(Lexer* lexer) {
       }
     } break;
 
+    // separators "(" ")" "[" "]" "{" "}" "," ";" ":" "."
     case '(':  case ')':  case '[':  case ']':  case '{':  case '}':
     case ',':  case ';':  case ':':  case '.':
     {
-      token.kind = TOKEN_SEP;
+      token.kind = TOKEN_SYMBOL;
     } break;
 
-    case '!':
+    // operators "!" "!=" "=" "==" "<" "<=" ">" ">="
+    case '!':  case '=':  case '<':  case '>':
     {
-      token.kind = TOKEN_OP;
+      token.kind = TOKEN_SYMBOL;
       if (peekChar(lexer) == '=') {
         nextChar(lexer);
       }
     } break;
 
-    case '<':  case '>':
-    {
-      token.kind = TOKEN_OP;
-      if (peekChar(lexer) == '=') {
-        nextChar(lexer);
-      }
-    } break;
-
-    case '=':
-    {
-      if (peekChar(lexer) == '=') {
-        token.kind = TOKEN_OP;
-        nextChar(lexer);
-      } else {
-        token.kind = TOKEN_SEP;
-      }
-    } break;
-
+    // operators "+" "++" "&" "&&" "|" "||"
     case '+':  case '&':  case '|':
     {
-      token.kind = TOKEN_OP;
+      token.kind = TOKEN_SYMBOL;
       if (peekChar(lexer) == lexer->currentChar) {
         nextChar(lexer);
       }
     } break;
 
+    // operators "*" "%" "^" "~"
     case '*':  case '%':  case '^':  case '~':
     {
-      token.kind = TOKEN_OP;
+      token.kind = TOKEN_SYMBOL;
     } break;
 
+    // operators "-" "--" "->"
     case '-':
     {
-      if (peekChar(lexer) == '>') {
-        token.kind = TOKEN_SEP;
+      token.kind = TOKEN_SYMBOL;
+      if (peekChar(lexer) == '>' || peekChar(lexer) == lexer->currentChar) {
         nextChar(lexer);
-      } else {
-        token.kind = TOKEN_OP;
-        if (peekChar(lexer) == lexer->currentChar) {
-          nextChar(lexer);
-        }
       }
     } break;
 
+    // operator "/" and single-line and multi-line comments
     case '/':
     {
-      token.kind = TOKEN_OP;
+      token.kind = TOKEN_SYMBOL;
 
       if (peekChar(lexer) == '/') {  // munch single-line comment
         token.kind = TOKEN_COMMENT;
@@ -236,7 +242,7 @@ Token nextToken(Lexer* lexer) {
   }
 
   token.end = lexer->currentLoc;
-  const char* end = &lexer->source.content.chars[lexer->index];
+  const char* end = &lexer->source->content.chars[lexer->index];
   if (token.kind != TOKEN_ERROR) {
     token.chars = stringFromRange(start, (token.kind == TOKEN_EOF) ? end-1 : end);
   }

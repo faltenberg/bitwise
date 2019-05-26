@@ -92,7 +92,7 @@ static TestResult testFunc() {
   TestResult result = {};
   TestCase* testCase = &g_testCases[g_current++];
   Source src = sourceFromString(testCase->input);
-  Lexer lexer = lexerFromSource(src);
+  Lexer lexer = lexerFromSource(&src);
 
   for (int i = 0; i < sbufLength(testCase->tokens); i++) {
     Token t = nextToken(&lexer);
@@ -179,8 +179,8 @@ static TestResult testCreation() {
 
   {
     Source src = sourceFromString("foo bar");
-    Lexer lexer = lexerFromSource(src);
-    TEST(assertEqualStr(lexer.source.content, "foo bar"));
+    Lexer lexer = lexerFromSource(&src);
+    TEST(assertEqualStr(lexer.source->content, "foo bar"));
     TEST(assertEqualInt(lexer.index, 0));
     TEST(assertEqualChar(lexer.currentChar, 0));
     TEST(assertEqualTokenLoc(lexer.currentLoc, loc(0, 0)));
@@ -531,52 +531,52 @@ static void addTestsTokenSeparator(TestSuite* suite) {
 
   in = "(";
   createTest(suite, in, 1,
-    token(TOKEN_SEP, loc(1, 1), loc(1, 1), "(")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "(")
   );
 
   in = ")";
   createTest(suite, in, 1,
-    token(TOKEN_SEP, loc(1, 1), loc(1, 1), ")")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), ")")
   );
 
   in = "[";
   createTest(suite, in, 1,
-    token(TOKEN_SEP, loc(1, 1), loc(1, 1), "[")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "[")
   );
 
   in = "]";
   createTest(suite, in, 1,
-    token(TOKEN_SEP, loc(1, 1), loc(1, 1), "]")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "]")
   );
 
   in = "{";
   createTest(suite, in, 1,
-    token(TOKEN_SEP, loc(1, 1), loc(1, 1), "{")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "{")
   );
 
   in = "}";
   createTest(suite, in, 1,
-    token(TOKEN_SEP, loc(1, 1), loc(1, 1), "}")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "}")
   );
 
   in = ",";
   createTest(suite, in, 1,
-    token(TOKEN_SEP, loc(1, 1), loc(1, 1), ",")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), ",")
   );
 
   in = ";";
   createTest(suite, in, 1,
-    token(TOKEN_SEP, loc(1, 1), loc(1, 1), ";")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), ";")
   );
 
   in = ":";
   createTest(suite, in, 1,
-    token(TOKEN_SEP, loc(1, 1), loc(1, 1), ":")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), ":")
   );
 
   in = ".";
   createTest(suite, in, 1,
-    token(TOKEN_SEP, loc(1, 1), loc(1, 1), ".")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), ".")
   );
 }
 
@@ -586,27 +586,27 @@ static void addTestsTokenOperator(TestSuite* suite) {
 
   in = "+";
   createTest(suite, in, 1,
-    token(TOKEN_OP, loc(1, 1), loc(1, 1), "+")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "+")
   );
 
   in = "-";
   createTest(suite, in, 1,
-    token(TOKEN_OP, loc(1, 1), loc(1, 1), "-")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "-")
   );
 
   in = "*";
   createTest(suite, in, 1,
-    token(TOKEN_OP, loc(1, 1), loc(1, 1), "*")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "*")
   );
 
   in = "/";
   createTest(suite, in, 1,
-    token(TOKEN_OP, loc(1, 1), loc(1, 1), "/")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "/")
   );
 
   in = "%";
   createTest(suite, in, 1,
-    token(TOKEN_OP, loc(1, 1), loc(1, 1), "%")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "%")
   );
 }
 
@@ -728,9 +728,9 @@ static void addTestsDeclarations(TestSuite* suite) {
   createTest(suite, in, 7,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "var"),
     token(TOKEN_NAME,    loc(1,  5), loc(1,  5), "x"),
-    token(TOKEN_SEP,     loc(1,  7), loc(1,  7), ":"),
+    token(TOKEN_SYMBOL,  loc(1,  7), loc(1,  7), ":"),
     token(TOKEN_NAME,    loc(1,  9), loc(1, 11), "int"),
-    token(TOKEN_SEP,     loc(1, 12), loc(1, 12), ";"),
+    token(TOKEN_SYMBOL,  loc(1, 12), loc(1, 12), ";"),
     token(TOKEN_COMMENT, loc(1, 15), loc(1, 22), "// x = 0"),
     token(TOKEN_EOF,     loc(1, 23), loc(1, 23), "")
   );
@@ -739,11 +739,11 @@ static void addTestsDeclarations(TestSuite* suite) {
   createTest(suite, in, 9,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "var"),
     token(TOKEN_NAME,    loc(1,  5), loc(1,  5), "x"),
-    token(TOKEN_SEP,     loc(1,  7), loc(1,  7), ":"),
+    token(TOKEN_SYMBOL,  loc(1,  7), loc(1,  7), ":"),
     token(TOKEN_NAME,    loc(1,  9), loc(1, 11), "int"),
-    token(TOKEN_SEP,     loc(1, 13), loc(1, 13), "="),
+    token(TOKEN_SYMBOL,  loc(1, 13), loc(1, 13), "="),
     token(TOKEN_INT,     loc(1, 15), loc(1, 17), "123"),
-    token(TOKEN_SEP,     loc(1, 18), loc(1, 18), ";"),
+    token(TOKEN_SYMBOL,  loc(1, 18), loc(1, 18), ";"),
     token(TOKEN_COMMENT, loc(1, 21), loc(1, 33), "/* x = 123 */"),
     token(TOKEN_EOF,     loc(1, 34), loc(1, 34), "")
   );
@@ -752,10 +752,10 @@ static void addTestsDeclarations(TestSuite* suite) {
   createTest(suite, in, 7,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "var"),
     token(TOKEN_NAME,    loc(1,  5), loc(1,  8), "mask"),
-    token(TOKEN_SEP,     loc(1, 10), loc(1, 10), ":"),
-    token(TOKEN_SEP,     loc(1, 11), loc(1, 11), "="),
+    token(TOKEN_SYMBOL,  loc(1, 10), loc(1, 10), ":"),
+    token(TOKEN_SYMBOL,  loc(1, 11), loc(1, 11), "="),
     token(TOKEN_INT,     loc(1, 13), loc(1, 23), "0b1010_1011"),
-    token(TOKEN_SEP,     loc(1, 24), loc(1, 24), ";"),
+    token(TOKEN_SYMBOL,  loc(1, 24), loc(1, 24), ";"),
     token(TOKEN_EOF,     loc(1, 25), loc(1, 25), "")
   );
 
@@ -763,10 +763,10 @@ static void addTestsDeclarations(TestSuite* suite) {
   createTest(suite, in, 7,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  5), "const"),
     token(TOKEN_NAME,    loc(1,  7), loc(1, 10), "ADDR"),
-    token(TOKEN_SEP,     loc(1, 12), loc(1, 12), ":"),
-    token(TOKEN_SEP,     loc(1, 13), loc(1, 13), "="),
+    token(TOKEN_SYMBOL,  loc(1, 12), loc(1, 12), ":"),
+    token(TOKEN_SYMBOL,  loc(1, 13), loc(1, 13), "="),
     token(TOKEN_INT,     loc(1, 15), loc(1, 22), "0x_AB40_"),
-    token(TOKEN_SEP,     loc(1, 23), loc(1, 23), ";"),
+    token(TOKEN_SYMBOL,  loc(1, 23), loc(1, 23), ";"),
     token(TOKEN_EOF,     loc(1, 24), loc(1, 24), "")
   );
 
@@ -774,10 +774,10 @@ static void addTestsDeclarations(TestSuite* suite) {
   createTest(suite, in, 7,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "var"),
     token(TOKEN_NAME,    loc(1,  5), loc(1,  7), "a_1"),
-    token(TOKEN_SEP,     loc(1,  9), loc(1,  9), ":"),
-    token(TOKEN_SEP,     loc(1, 10), loc(1, 10), "="),
+    token(TOKEN_SYMBOL,  loc(1,  9), loc(1,  9), ":"),
+    token(TOKEN_SYMBOL,  loc(1, 10), loc(1, 10), "="),
     token(TOKEN_ERROR,   loc(1, 12), loc(1, 14), ""),
-    token(TOKEN_SEP,     loc(1, 15), loc(1, 15), ";"),
+    token(TOKEN_SYMBOL,  loc(1, 15), loc(1, 15), ";"),
     token(TOKEN_EOF,     loc(1, 16), loc(1, 16), "")
   );
 
@@ -785,17 +785,17 @@ static void addTestsDeclarations(TestSuite* suite) {
   createTest(suite, in, 14,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  4), "func"),
     token(TOKEN_NAME,    loc(1,  6), loc(1,  6), "f"),
-    token(TOKEN_SEP,     loc(1,  8), loc(1,  8), ":"),
-    token(TOKEN_SEP,     loc(1, 10), loc(1, 10), "("),
-    token(TOKEN_SEP,     loc(1, 11), loc(1, 11), ")"),
-    token(TOKEN_SEP,     loc(1, 13), loc(1, 14), "->"),
+    token(TOKEN_SYMBOL,  loc(1,  8), loc(1,  8), ":"),
+    token(TOKEN_SYMBOL,  loc(1, 10), loc(1, 10), "("),
+    token(TOKEN_SYMBOL,  loc(1, 11), loc(1, 11), ")"),
+    token(TOKEN_SYMBOL,  loc(1, 13), loc(1, 14), "->"),
     token(TOKEN_NAME,    loc(1, 16), loc(1, 18), "int"),
-    token(TOKEN_SEP,     loc(1, 20), loc(1, 20), "{"),
+    token(TOKEN_SYMBOL,  loc(1, 20), loc(1, 20), "{"),
     token(TOKEN_KEYWORD, loc(2,  2), loc(2,  7), "return"),
-    token(TOKEN_OP,      loc(2,  9), loc(2,  9), "-"),
+    token(TOKEN_SYMBOL,  loc(2,  9), loc(2,  9), "-"),
     token(TOKEN_INT,     loc(2, 10), loc(2, 10), "1"),
-    token(TOKEN_SEP,     loc(2, 11), loc(2, 11), ";"),
-    token(TOKEN_SEP,     loc(3,  2), loc(3,  2), "}"),
+    token(TOKEN_SYMBOL,  loc(2, 11), loc(2, 11), ";"),
+    token(TOKEN_SYMBOL,  loc(3,  2), loc(3,  2), "}"),
     token(TOKEN_EOF,     loc(3,  3), loc(3,  3), "")
   );
 
@@ -803,25 +803,25 @@ static void addTestsDeclarations(TestSuite* suite) {
   createTest(suite, in, 22,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  4), "func"),
     token(TOKEN_NAME,    loc(1,  6), loc(1,  6), "f"),
-    token(TOKEN_SEP,     loc(1,  8), loc(1,  8), ":"),
-    token(TOKEN_SEP,     loc(1, 10), loc(1, 10), "("),
+    token(TOKEN_SYMBOL,  loc(1,  8), loc(1,  8), ":"),
+    token(TOKEN_SYMBOL,  loc(1, 10), loc(1, 10), "("),
     token(TOKEN_NAME,    loc(1, 11), loc(1, 11), "a"),
-    token(TOKEN_SEP,     loc(1, 12), loc(1, 12), ":"),
+    token(TOKEN_SYMBOL,  loc(1, 12), loc(1, 12), ":"),
     token(TOKEN_NAME,    loc(1, 14), loc(1, 16), "int"),
-    token(TOKEN_SEP,     loc(1, 17), loc(1, 17), ","),
+    token(TOKEN_SYMBOL,  loc(1, 17), loc(1, 17), ","),
     token(TOKEN_NAME,    loc(1, 19), loc(1, 19), "b"),
-    token(TOKEN_SEP,     loc(1, 20), loc(1, 20), ":"),
+    token(TOKEN_SYMBOL,  loc(1, 20), loc(1, 20), ":"),
     token(TOKEN_NAME,    loc(1, 22), loc(1, 24), "int"),
-    token(TOKEN_SEP,     loc(1, 25), loc(1, 25), ")"),
-    token(TOKEN_SEP,     loc(1, 27), loc(1, 28), "->"),
+    token(TOKEN_SYMBOL,  loc(1, 25), loc(1, 25), ")"),
+    token(TOKEN_SYMBOL,  loc(1, 27), loc(1, 28), "->"),
     token(TOKEN_NAME,    loc(1, 30), loc(1, 32), "int"),
-    token(TOKEN_SEP,     loc(1, 34), loc(1, 34), "{"),
+    token(TOKEN_SYMBOL,  loc(1, 34), loc(1, 34), "{"),
     token(TOKEN_KEYWORD, loc(1, 36), loc(1, 41), "return"),
     token(TOKEN_NAME,    loc(1, 43), loc(1, 43), "a"),
-    token(TOKEN_OP,      loc(1, 44), loc(1, 44), "+"),
+    token(TOKEN_SYMBOL,  loc(1, 44), loc(1, 44), "+"),
     token(TOKEN_NAME,    loc(1, 45), loc(1, 45), "b"),
-    token(TOKEN_SEP,     loc(1, 46), loc(1, 46), ";"),
-    token(TOKEN_SEP,     loc(1, 48), loc(1, 48), "}"),
+    token(TOKEN_SYMBOL,  loc(1, 46), loc(1, 46), ";"),
+    token(TOKEN_SYMBOL,  loc(1, 48), loc(1, 48), "}"),
     token(TOKEN_EOF,     loc(1, 49), loc(1, 49), "")
   );
 
@@ -829,17 +829,17 @@ static void addTestsDeclarations(TestSuite* suite) {
   createTest(suite, in, 14,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  6), "struct"),
     token(TOKEN_NAME,    loc(1,  8), loc(1, 11), "Vec2"),
-    token(TOKEN_SEP,     loc(1, 13), loc(1, 13), ":"),
-    token(TOKEN_SEP,     loc(1, 15), loc(1, 15), "{"),
+    token(TOKEN_SYMBOL,  loc(1, 13), loc(1, 13), ":"),
+    token(TOKEN_SYMBOL,  loc(1, 15), loc(1, 15), "{"),
     token(TOKEN_NAME,    loc(2,  2), loc(2,  2), "x"),
-    token(TOKEN_SEP,     loc(2,  3), loc(2,  3), ":"),
+    token(TOKEN_SYMBOL,  loc(2,  3), loc(2,  3), ":"),
     token(TOKEN_NAME,    loc(2,  5), loc(2,  7), "int"),
-    token(TOKEN_SEP,     loc(2,  8), loc(2,  8), ";"),
+    token(TOKEN_SYMBOL,  loc(2,  8), loc(2,  8), ";"),
     token(TOKEN_NAME,    loc(2, 10), loc(2, 10), "y"),
-    token(TOKEN_SEP,     loc(2, 11), loc(2, 11), ":"),
+    token(TOKEN_SYMBOL,  loc(2, 11), loc(2, 11), ":"),
     token(TOKEN_NAME,    loc(2, 13), loc(2, 15), "int"),
-    token(TOKEN_SEP,     loc(2, 16), loc(2, 16), ";"),
-    token(TOKEN_SEP,     loc(3,  2), loc(3,  2), "}"),
+    token(TOKEN_SYMBOL,  loc(2, 16), loc(2, 16), ";"),
+    token(TOKEN_SYMBOL,  loc(3,  2), loc(3,  2), "}"),
     token(TOKEN_EOF,     loc(3,  3), loc(3,  3), "")
   );
 
@@ -847,17 +847,17 @@ static void addTestsDeclarations(TestSuite* suite) {
   createTest(suite, in, 14,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "var"),
     token(TOKEN_NAME,    loc(1,  5), loc(1,  5), "v"),
-    token(TOKEN_SEP,     loc(1,  6), loc(1,  6), ":"),
+    token(TOKEN_SYMBOL,  loc(1,  6), loc(1,  6), ":"),
     token(TOKEN_NAME,    loc(1,  8), loc(1, 10), "int"),
-    token(TOKEN_SEP,     loc(1, 11), loc(1, 11), "["),
-    token(TOKEN_SEP,     loc(1, 12), loc(1, 12), "]"),
-    token(TOKEN_SEP,     loc(1, 14), loc(1, 14), "="),
-    token(TOKEN_SEP,     loc(1, 16), loc(1, 16), "["),
+    token(TOKEN_SYMBOL,  loc(1, 11), loc(1, 11), "["),
+    token(TOKEN_SYMBOL,  loc(1, 12), loc(1, 12), "]"),
+    token(TOKEN_SYMBOL,  loc(1, 14), loc(1, 14), "="),
+    token(TOKEN_SYMBOL,  loc(1, 16), loc(1, 16), "["),
     token(TOKEN_INT,     loc(1, 17), loc(1, 17), "1"),
-    token(TOKEN_SEP,     loc(1, 18), loc(1, 18), ","),
+    token(TOKEN_SYMBOL,  loc(1, 18), loc(1, 18), ","),
     token(TOKEN_INT,     loc(1, 20), loc(1, 20), "2"),
-    token(TOKEN_SEP,     loc(1, 21), loc(1, 21), "]"),
-    token(TOKEN_SEP,     loc(1, 22), loc(1, 22), ";"),
+    token(TOKEN_SYMBOL,  loc(1, 21), loc(1, 21), "]"),
+    token(TOKEN_SYMBOL,  loc(1, 22), loc(1, 22), ";"),
     token(TOKEN_EOF,     loc(1, 23), loc(1, 23), "")
   );
 }
@@ -868,32 +868,32 @@ static void addTestsExpressions(TestSuite* suite) {
 
   in = "(x + y) / 2";
   createTest(suite, in, 8,
-    token(TOKEN_SEP,     loc(1,  1), loc(1,  1), "("),
+    token(TOKEN_SYMBOL,  loc(1,  1), loc(1,  1), "("),
     token(TOKEN_NAME,    loc(1,  2), loc(1,  2), "x"),
-    token(TOKEN_OP,      loc(1,  4), loc(1,  4), "+"),
+    token(TOKEN_SYMBOL,  loc(1,  4), loc(1,  4), "+"),
     token(TOKEN_NAME,    loc(1,  6), loc(1,  6), "y"),
-    token(TOKEN_SEP,     loc(1,  7), loc(1,  7), ")"),
-    token(TOKEN_OP,      loc(1,  9), loc(1,  9), "/"),
+    token(TOKEN_SYMBOL,  loc(1,  7), loc(1,  7), ")"),
+    token(TOKEN_SYMBOL,  loc(1,  9), loc(1,  9), "/"),
     token(TOKEN_INT,     loc(1, 11), loc(1, 11), "2"),
     token(TOKEN_EOF,     loc(1, 12), loc(1, 12), "")
   );
 
   in = "((x+1) * (y-2)) / 2";
   createTest(suite, in, 16,
-    token(TOKEN_SEP,     loc(1,  1), loc(1,  1), "("),
-    token(TOKEN_SEP,     loc(1,  2), loc(1,  2), "("),
+    token(TOKEN_SYMBOL,  loc(1,  1), loc(1,  1), "("),
+    token(TOKEN_SYMBOL,  loc(1,  2), loc(1,  2), "("),
     token(TOKEN_NAME,    loc(1,  3), loc(1,  3), "x"),
-    token(TOKEN_OP,      loc(1,  4), loc(1,  4), "+"),
+    token(TOKEN_SYMBOL,  loc(1,  4), loc(1,  4), "+"),
     token(TOKEN_INT,     loc(1,  5), loc(1,  5), "1"),
-    token(TOKEN_SEP,     loc(1,  6), loc(1,  6), ")"),
-    token(TOKEN_OP,      loc(1,  8), loc(1,  8), "*"),
-    token(TOKEN_SEP,     loc(1, 10), loc(1, 10), "("),
+    token(TOKEN_SYMBOL,  loc(1,  6), loc(1,  6), ")"),
+    token(TOKEN_SYMBOL,  loc(1,  8), loc(1,  8), "*"),
+    token(TOKEN_SYMBOL,  loc(1, 10), loc(1, 10), "("),
     token(TOKEN_NAME,    loc(1, 11), loc(1, 11), "y"),
-    token(TOKEN_OP,      loc(1, 12), loc(1, 12), "-"),
+    token(TOKEN_SYMBOL,  loc(1, 12), loc(1, 12), "-"),
     token(TOKEN_INT,     loc(1, 13), loc(1, 13), "2"),
-    token(TOKEN_SEP,     loc(1, 14), loc(1, 14), ")"),
-    token(TOKEN_SEP,     loc(1, 15), loc(1, 15), ")"),
-    token(TOKEN_OP,      loc(1, 17), loc(1, 17), "/"),
+    token(TOKEN_SYMBOL,  loc(1, 14), loc(1, 14), ")"),
+    token(TOKEN_SYMBOL,  loc(1, 15), loc(1, 15), ")"),
+    token(TOKEN_SYMBOL,  loc(1, 17), loc(1, 17), "/"),
     token(TOKEN_INT,     loc(1, 19), loc(1, 19), "2"),
     token(TOKEN_EOF,     loc(1, 20), loc(1, 20), "")
   );
@@ -901,8 +901,8 @@ static void addTestsExpressions(TestSuite* suite) {
   in = "x & ~0b0000_1000";
   createTest(suite, in, 4,
     token(TOKEN_NAME,    loc(1,  1), loc(1,  1), "x"),
-    token(TOKEN_OP,      loc(1,  3), loc(1,  3), "&"),
-    token(TOKEN_OP,      loc(1,  5), loc(1,  5), "~"),
+    token(TOKEN_SYMBOL,  loc(1,  3), loc(1,  3), "&"),
+    token(TOKEN_SYMBOL,  loc(1,  5), loc(1,  5), "~"),
     token(TOKEN_INT,     loc(1,  6), loc(1, 16), "0b0000_1000"),
     token(TOKEN_EOF,     loc(1, 17), loc(1, 17), "")
   );
@@ -910,7 +910,7 @@ static void addTestsExpressions(TestSuite* suite) {
   in = "x | 0b0000_1000";
   createTest(suite, in, 4,
     token(TOKEN_NAME,    loc(1,  1), loc(1,  1), "x"),
-    token(TOKEN_OP,      loc(1,  3), loc(1,  3), "|"),
+    token(TOKEN_SYMBOL,  loc(1,  3), loc(1,  3), "|"),
     token(TOKEN_INT,     loc(1,  5), loc(1, 15), "0b0000_1000"),
     token(TOKEN_EOF,     loc(1, 16), loc(1, 16), "")
   );
@@ -918,9 +918,19 @@ static void addTestsExpressions(TestSuite* suite) {
   in = "x ^ 0b0000_1000";
   createTest(suite, in, 4,
     token(TOKEN_NAME,    loc(1,  1), loc(1,  1), "x"),
-    token(TOKEN_OP,      loc(1,  3), loc(1,  3), "^"),
+    token(TOKEN_SYMBOL,  loc(1,  3), loc(1,  3), "^"),
     token(TOKEN_INT,     loc(1,  5), loc(1, 15), "0b0000_1000"),
     token(TOKEN_EOF,     loc(1, 16), loc(1, 16), "")
+  );
+
+  in = "x+-*p";
+  createTest(suite, in, 6,
+    token(TOKEN_NAME,    loc(1,  1), loc(1,  1), "x"),
+    token(TOKEN_SYMBOL,  loc(1,  2), loc(1,  2), "+"),
+    token(TOKEN_SYMBOL,  loc(1,  3), loc(1,  3), "-"),
+    token(TOKEN_SYMBOL,  loc(1,  4), loc(1,  4), "*"),
+    token(TOKEN_NAME,    loc(1,  5), loc(1,  5), "p"),
+    token(TOKEN_EOF,     loc(1,  6), loc(1,  6), "")
   );
 }
 
@@ -931,137 +941,137 @@ static void addTestsStatements(TestSuite* suite) {
   in = "if (x == 1) {\\n}";
   createTest(suite, in, 9,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  2), "if"),
-    token(TOKEN_SEP,     loc(1,  4), loc(1,  4), "("),
+    token(TOKEN_SYMBOL,  loc(1,  4), loc(1,  4), "("),
     token(TOKEN_NAME,    loc(1,  5), loc(1,  5), "x"),
-    token(TOKEN_OP,      loc(1,  7), loc(1,  8), "=="),
+    token(TOKEN_SYMBOL,  loc(1,  7), loc(1,  8), "=="),
     token(TOKEN_INT,     loc(1, 10), loc(1, 10), "1"),
-    token(TOKEN_SEP,     loc(1, 11), loc(1, 11), ")"),
-    token(TOKEN_SEP,     loc(1, 13), loc(1, 13), "{"),
-    token(TOKEN_SEP,     loc(2,  1), loc(2,  1), "}"),
+    token(TOKEN_SYMBOL,  loc(1, 11), loc(1, 11), ")"),
+    token(TOKEN_SYMBOL,  loc(1, 13), loc(1, 13), "{"),
+    token(TOKEN_SYMBOL,  loc(2,  1), loc(2,  1), "}"),
     token(TOKEN_EOF,     loc(2,  2), loc(2,  2), "")
   );
 
   in = "if (y != 0) {\\n}";
   createTest(suite, in, 9,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  2), "if"),
-    token(TOKEN_SEP,     loc(1,  4), loc(1,  4), "("),
+    token(TOKEN_SYMBOL,  loc(1,  4), loc(1,  4), "("),
     token(TOKEN_NAME,    loc(1,  5), loc(1,  5), "y"),
-    token(TOKEN_OP,      loc(1,  7), loc(1,  8), "!="),
+    token(TOKEN_SYMBOL,  loc(1,  7), loc(1,  8), "!="),
     token(TOKEN_INT,     loc(1, 10), loc(1, 10), "0"),
-    token(TOKEN_SEP,     loc(1, 11), loc(1, 11), ")"),
-    token(TOKEN_SEP,     loc(1, 13), loc(1, 13), "{"),
-    token(TOKEN_SEP,     loc(2,  1), loc(2,  1), "}"),
+    token(TOKEN_SYMBOL,  loc(1, 11), loc(1, 11), ")"),
+    token(TOKEN_SYMBOL,  loc(1, 13), loc(1, 13), "{"),
+    token(TOKEN_SYMBOL,  loc(2,  1), loc(2,  1), "}"),
     token(TOKEN_EOF,     loc(2,  2), loc(2,  2), "")
   );
 
   in = "while (!finished) {\\n}";
   createTest(suite, in, 8,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  5), "while"),
-    token(TOKEN_SEP,     loc(1,  7), loc(1,  7), "("),
-    token(TOKEN_OP,      loc(1,  8), loc(1,  8), "!"),
+    token(TOKEN_SYMBOL,  loc(1,  7), loc(1,  7), "("),
+    token(TOKEN_SYMBOL,  loc(1,  8), loc(1,  8), "!"),
     token(TOKEN_NAME,    loc(1,  9), loc(1, 16), "finished"),
-    token(TOKEN_SEP,     loc(1, 17), loc(1, 17), ")"),
-    token(TOKEN_SEP,     loc(1, 19), loc(1, 19), "{"),
-    token(TOKEN_SEP,     loc(2,  1), loc(2,  1), "}"),
+    token(TOKEN_SYMBOL,  loc(1, 17), loc(1, 17), ")"),
+    token(TOKEN_SYMBOL,  loc(1, 19), loc(1, 19), "{"),
+    token(TOKEN_SYMBOL,  loc(2,  1), loc(2,  1), "}"),
     token(TOKEN_EOF,     loc(2,  2), loc(2,  2), "")
   );
 
   in = "if (a && b || c) {\\n}";
   createTest(suite, in, 11,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  2), "if"),
-    token(TOKEN_SEP,     loc(1,  4), loc(1,  4), "("),
+    token(TOKEN_SYMBOL,  loc(1,  4), loc(1,  4), "("),
     token(TOKEN_NAME,    loc(1,  5), loc(1,  5), "a"),
-    token(TOKEN_OP,      loc(1,  7), loc(1,  8), "&&"),
+    token(TOKEN_SYMBOL,  loc(1,  7), loc(1,  8), "&&"),
     token(TOKEN_NAME,    loc(1, 10), loc(1, 10), "b"),
-    token(TOKEN_OP,      loc(1, 12), loc(1, 13), "||"),
+    token(TOKEN_SYMBOL,  loc(1, 12), loc(1, 13), "||"),
     token(TOKEN_NAME,    loc(1, 15), loc(1, 15), "c"),
-    token(TOKEN_SEP,     loc(1, 16), loc(1, 16), ")"),
-    token(TOKEN_SEP,     loc(1, 18), loc(1, 18), "{"),
-    token(TOKEN_SEP,     loc(2,  1), loc(2,  1), "}"),
+    token(TOKEN_SYMBOL,  loc(1, 16), loc(1, 16), ")"),
+    token(TOKEN_SYMBOL,  loc(1, 18), loc(1, 18), "{"),
+    token(TOKEN_SYMBOL,  loc(2,  1), loc(2,  1), "}"),
     token(TOKEN_EOF,     loc(2,  2), loc(2,  2), "")
   );
 
   in = "for (i := 0; i < 10; i++) {\\n continue; }";
   createTest(suite, in, 19,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "for"),
-    token(TOKEN_SEP,     loc(1,  5), loc(1,  5), "("),
+    token(TOKEN_SYMBOL,  loc(1,  5), loc(1,  5), "("),
     token(TOKEN_NAME,    loc(1,  6), loc(1,  6), "i"),
-    token(TOKEN_SEP,     loc(1,  8), loc(1,  8), ":"),
-    token(TOKEN_SEP,     loc(1,  9), loc(1,  9), "="),
+    token(TOKEN_SYMBOL,  loc(1,  8), loc(1,  8), ":"),
+    token(TOKEN_SYMBOL,  loc(1,  9), loc(1,  9), "="),
     token(TOKEN_INT,     loc(1, 11), loc(1, 11), "0"),
-    token(TOKEN_SEP,     loc(1, 12), loc(1, 12), ";"),
+    token(TOKEN_SYMBOL,  loc(1, 12), loc(1, 12), ";"),
     token(TOKEN_NAME,    loc(1, 14), loc(1, 14), "i"),
-    token(TOKEN_OP,      loc(1, 16), loc(1, 16), "<"),
+    token(TOKEN_SYMBOL,  loc(1, 16), loc(1, 16), "<"),
     token(TOKEN_INT,     loc(1, 18), loc(1, 19), "10"),
-    token(TOKEN_SEP,     loc(1, 20), loc(1, 20), ";"),
+    token(TOKEN_SYMBOL,  loc(1, 20), loc(1, 20), ";"),
     token(TOKEN_NAME,    loc(1, 22), loc(1, 22), "i"),
-    token(TOKEN_OP,      loc(1, 23), loc(1, 24), "++"),
-    token(TOKEN_SEP,     loc(1, 25), loc(1, 25), ")"),
-    token(TOKEN_SEP,     loc(1, 27), loc(1, 27), "{"),
+    token(TOKEN_SYMBOL,  loc(1, 23), loc(1, 24), "++"),
+    token(TOKEN_SYMBOL,  loc(1, 25), loc(1, 25), ")"),
+    token(TOKEN_SYMBOL,  loc(1, 27), loc(1, 27), "{"),
     token(TOKEN_KEYWORD, loc(2,  2), loc(2,  9), "continue"),
-    token(TOKEN_SEP,     loc(2, 10), loc(2, 10), ";"),
-    token(TOKEN_SEP,     loc(2, 12), loc(2, 12), "}"),
+    token(TOKEN_SYMBOL,  loc(2, 10), loc(2, 10), ";"),
+    token(TOKEN_SYMBOL,  loc(2, 12), loc(2, 12), "}"),
     token(TOKEN_EOF,     loc(2, 13), loc(2, 13), "")
   );
 
   in = "for (i := 9; i >= 0; i--) {\\n break; }";
   createTest(suite, in, 19,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  3), "for"),
-    token(TOKEN_SEP,     loc(1,  5), loc(1,  5), "("),
+    token(TOKEN_SYMBOL,  loc(1,  5), loc(1,  5), "("),
     token(TOKEN_NAME,    loc(1,  6), loc(1,  6), "i"),
-    token(TOKEN_SEP,     loc(1,  8), loc(1,  8), ":"),
-    token(TOKEN_SEP,     loc(1,  9), loc(1,  9), "="),
+    token(TOKEN_SYMBOL,  loc(1,  8), loc(1,  8), ":"),
+    token(TOKEN_SYMBOL,  loc(1,  9), loc(1,  9), "="),
     token(TOKEN_INT,     loc(1, 11), loc(1, 11), "9"),
-    token(TOKEN_SEP,     loc(1, 12), loc(1, 12), ";"),
+    token(TOKEN_SYMBOL,  loc(1, 12), loc(1, 12), ";"),
     token(TOKEN_NAME,    loc(1, 14), loc(1, 14), "i"),
-    token(TOKEN_OP,      loc(1, 16), loc(1, 17), ">="),
+    token(TOKEN_SYMBOL,  loc(1, 16), loc(1, 17), ">="),
     token(TOKEN_INT,     loc(1, 19), loc(1, 19), "0"),
-    token(TOKEN_SEP,     loc(1, 20), loc(1, 20), ";"),
+    token(TOKEN_SYMBOL,  loc(1, 20), loc(1, 20), ";"),
     token(TOKEN_NAME,    loc(1, 22), loc(1, 22), "i"),
-    token(TOKEN_OP,      loc(1, 23), loc(1, 24), "--"),
-    token(TOKEN_SEP,     loc(1, 25), loc(1, 25), ")"),
-    token(TOKEN_SEP,     loc(1, 27), loc(1, 27), "{"),
+    token(TOKEN_SYMBOL,  loc(1, 23), loc(1, 24), "--"),
+    token(TOKEN_SYMBOL,  loc(1, 25), loc(1, 25), ")"),
+    token(TOKEN_SYMBOL,  loc(1, 27), loc(1, 27), "{"),
     token(TOKEN_KEYWORD, loc(2,  2), loc(2,  6), "break"),
-    token(TOKEN_SEP,     loc(2,  7), loc(2,  7), ";"),
-    token(TOKEN_SEP,     loc(2,  9), loc(2,  9), "}"),
+    token(TOKEN_SYMBOL,  loc(2,  7), loc(2,  7), ";"),
+    token(TOKEN_SYMBOL,  loc(2,  9), loc(2,  9), "}"),
     token(TOKEN_EOF,     loc(2, 10), loc(2, 10), "")
   );
 
   in = "do {\\n print(x);\\n } while (true);";
   createTest(suite, in, 14,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  2), "do"),
-    token(TOKEN_SEP,     loc(1,  4), loc(1,  4), "{"),
+    token(TOKEN_SYMBOL,  loc(1,  4), loc(1,  4), "{"),
     token(TOKEN_NAME,    loc(2,  2), loc(2,  6), "print"),
-    token(TOKEN_SEP,     loc(2,  7), loc(2,  7), "("),
+    token(TOKEN_SYMBOL,  loc(2,  7), loc(2,  7), "("),
     token(TOKEN_NAME,    loc(2,  8), loc(2,  8), "x"),
-    token(TOKEN_SEP,     loc(2,  9), loc(2,  9), ")"),
-    token(TOKEN_SEP,     loc(2, 10), loc(2, 10), ";"),
-    token(TOKEN_SEP,     loc(3,  2), loc(3,  2), "}"),
+    token(TOKEN_SYMBOL,  loc(2,  9), loc(2,  9), ")"),
+    token(TOKEN_SYMBOL,  loc(2, 10), loc(2, 10), ";"),
+    token(TOKEN_SYMBOL,  loc(3,  2), loc(3,  2), "}"),
     token(TOKEN_KEYWORD, loc(3,  4), loc(3,  8), "while"),
-    token(TOKEN_SEP,     loc(3, 10), loc(3, 10), "("),
+    token(TOKEN_SYMBOL,  loc(3, 10), loc(3, 10), "("),
     token(TOKEN_KEYWORD, loc(3, 11), loc(3, 14), "true"),
-    token(TOKEN_SEP,     loc(3, 15), loc(3, 15), ")"),
-    token(TOKEN_SEP,     loc(3, 16), loc(3, 16), ";"),
+    token(TOKEN_SYMBOL,  loc(3, 15), loc(3, 15), ")"),
+    token(TOKEN_SYMBOL,  loc(3, 16), loc(3, 16), ";"),
     token(TOKEN_EOF,     loc(3, 17), loc(3, 17), "")
   );
 
   in = "switch (x) {\\n case 1 -> { }\\n else -> { }\\n }";
   createTest(suite, in, 16,
     token(TOKEN_KEYWORD, loc(1,  1), loc(1,  6), "switch"),
-    token(TOKEN_SEP,     loc(1,  8), loc(1,  8), "("),
+    token(TOKEN_SYMBOL,  loc(1,  8), loc(1,  8), "("),
     token(TOKEN_NAME,    loc(1,  9), loc(1,  9), "x"),
-    token(TOKEN_SEP,     loc(1, 10), loc(1, 10), ")"),
-    token(TOKEN_SEP,     loc(1, 12), loc(1, 12), "{"),
+    token(TOKEN_SYMBOL,  loc(1, 10), loc(1, 10), ")"),
+    token(TOKEN_SYMBOL,  loc(1, 12), loc(1, 12), "{"),
     token(TOKEN_KEYWORD, loc(2,  2), loc(2,  5), "case"),
     token(TOKEN_INT,     loc(2,  7), loc(2,  7), "1"),
-    token(TOKEN_SEP,     loc(2,  9), loc(2, 10), "->"),
-    token(TOKEN_SEP,     loc(2, 12), loc(2, 12), "{"),
-    token(TOKEN_SEP,     loc(2, 14), loc(2, 14), "}"),
+    token(TOKEN_SYMBOL,  loc(2,  9), loc(2, 10), "->"),
+    token(TOKEN_SYMBOL,  loc(2, 12), loc(2, 12), "{"),
+    token(TOKEN_SYMBOL,  loc(2, 14), loc(2, 14), "}"),
     token(TOKEN_KEYWORD, loc(3,  2), loc(3,  5), "else"),
-    token(TOKEN_SEP,     loc(3,  7), loc(3,  8), "->"),
-    token(TOKEN_SEP,     loc(3, 10), loc(3, 10), "{"),
-    token(TOKEN_SEP,     loc(3, 12), loc(3, 12), "}"),
-    token(TOKEN_SEP,     loc(4,  2), loc(4,  2), "}"),
+    token(TOKEN_SYMBOL,  loc(3,  7), loc(3,  8), "->"),
+    token(TOKEN_SYMBOL,  loc(3, 10), loc(3, 10), "{"),
+    token(TOKEN_SYMBOL,  loc(3, 12), loc(3, 12), "}"),
+    token(TOKEN_SYMBOL,  loc(4,  2), loc(4,  2), "}"),
     token(TOKEN_EOF,     loc(4,  3), loc(4,  3), "")
   );
 }

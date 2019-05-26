@@ -7,9 +7,9 @@
  * ======
  *
  * Source code is divided into a stream of `Token`s by the lexer. `Tokens` with similar properties
- * belong to the same `TokenKind` such as numbers and identiers. For each token additional
- * information is stored, namely the position of the first and last character of the token. The raw
- * token characters are stored, too.
+ * belong to the same `TokenKind` such as numbers and identiers. For each token the locations of
+ * their first and last character within the source and the raw string are stored. If the lexer
+ * detects some grammar violation it will return a `TOKEN_ERROR` token describing the error.
  *
  *
  * Example
@@ -22,8 +22,8 @@
  * #include <stdio.h>
  *
  * int main() {
- *   // create a source for tokens
- *   Lexer lexer = createLexer(sourceFromString("x + 42; 1x"));
+ *   Source src = sourceFromString("x + 42; 1x // error\n"));
+ *   Lexer lexer = lexerFromSource(&src);
  *
  *   Token t = nextToken(&lexer);
  *   assert(t.kind != TOKEN_NONE);  // TOKEN_NONE is an invalid token
@@ -60,15 +60,25 @@
  *   assert(t.start.pos == 9);
  *   assert(t.end.pos == 10);
  *   string line = getLine(t.source, t.start.line);
- *   printf("%.*s:%d:%d: error in \"%.*s\": %.*s",
+ *   printf("%.*s:%d:%d: error in \"%.*s\": %.*s\n",
  *          t.source->fileName.len, t.source->fileName.chars, t.start.line, t.start.pos,
  *          line.len, line.chars, t.chars.len, t.chars.chars);
  *
+ *   // comments are tokens as well (note that \n is not part of the comment)
+ *   t = nextToken(&lexer);
+ *   assert(t.kind == TOKEN_COMMENT);
+ *   assert(t.start.pos == 12);
+ *   assert(t.end.pos == 19);
+ *   assert(cstrequal(t.chars, "// error"));
+ *
  *   t = nextToken(&lexer);
  *   assert(t.kind == TOKEN_EOF);
- *   assert(t.start.pos == 11);
- *   assert(t.end.pos == 11);
- *   assert(cstrequal(t.chars, "\0"));
+ *   assert(t.start.line == 2);
+ *   assert(t.start.pos == 1);
+ *   assert(t.end.pos == 1);
+ *   assert(cstrequal(t.chars, ""));
+ *
+ *   deleteSource(&src);
  * }
  * ```
  */
@@ -77,7 +87,21 @@
 #import "source.h"
 #import "str.h"
 
+#include <stddef.h>
 
+
+/**
+ * `TokenKind` differentiates various token categories.
+ *
+ * - **enum:** `TOKEN_NONE`    - invalid token, no token at all
+ * - **enum:** `TOKEN_EOF`     - final token returned when all the source was processed
+ * - **enum:** `TOKEN_ERROR`   - error token due to violation of the lexical grammar
+ * - **enum:** `TOKEN_COMMENT` - single-line or multi-line comment token
+ * - **enum:** `TOKEN_INT`     - integer literal token
+ * - **enum:** `TOKEN_NAME`    - identifier token
+ * - **enum:** `TOKEN_KEYWORD` - keyword token like "if", "else", etc.
+ * - **enum:** `TOKEN_SYMBOL`  - special characters like "+", "++", "<=", "(", "->", etc.
+ */
 typedef enum TokenKind {
   TOKEN_NONE,
   TOKEN_EOF,
@@ -86,28 +110,52 @@ typedef enum TokenKind {
   TOKEN_INT,
   TOKEN_NAME,
   TOKEN_KEYWORD,
-  TOKEN_OP,
-  TOKEN_SEP,
+  TOKEN_SYMBOL,
 } TokenKind;
 
 
+/**
+ * `str()` returns the `TokenKind` in a string format.
+ *
+ * - **param:** `kind` - the token kind
+ * - **return:** the string representation of the token kind
+ */
 string str(TokenKind kind);
 
-bool isKeyword(string s);
 
-
+/**
+ * `TokenLoc` stores the line and position of a token within a source file. Counting lines in a
+ * source file starts with line, just like counting characters in a line. If the location is
+ * given, then the line can be extracted with `getLine()` from the `Source`.
+ *
+ * - **field:** `line` - the line within the source
+ * - **field:** `pos`  - the position within the line
+ */
 typedef struct TokenLoc {
-  int line;
-  int pos;
+  unsigned int line;
+  unsigned int pos;
 } TokenLoc;
 
 
+/**
+ * `Token` is the smallest entity in a source file. Each token is defined by some regular
+ * expression in some grammar. `Token` stores all the information that is necessary to distinguish
+ * the token type and its position in the source as well as the underlying characters. The token
+ * string must not be freed. Undefined behavior will occur if a token is used once the underlying
+ * source was freed, since the string will point to some invalid memory.
+ *
+ * - **field:** `kind`   - the `TokenKind` of the token
+ * - **field:** `source` - the pointer to the source the token was read from
+ * - **field:** `start`  - the location of the token's first character within the source
+ * - **field:** `end`    - the location of the token's last character within the source
+ * - **field:** `chars`  - the string containing the token characters
+ */
 typedef struct Token {
-  TokenKind kind;
-  Source*   source;
-  TokenLoc  start;
-  TokenLoc  end;
-  string    chars;
+  TokenKind     kind;
+  const Source* source;
+  TokenLoc      start;
+  TokenLoc      end;
+  string        chars;
 } Token;
 
 

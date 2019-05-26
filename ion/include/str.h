@@ -62,7 +62,7 @@ typedef struct string {
 
 
 /**
- * `stringFromArray()` sreates a new string from a C string.
+ * `stringFromArray()` creates a new string from a C string.
  *
  * - **param:** `s` - the C string
  * - **return:** the wrapped string
