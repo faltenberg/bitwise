@@ -2,6 +2,8 @@
 
 #include "str.h"
 
+#include <stdlib.h>
+
 
 static TestResult testStringCreation() {
   TestResult result = {};
@@ -10,18 +12,21 @@ static TestResult testStringCreation() {
     string s = stringFromArray("");
     TEST(assertSame(s.chars, ""));
     TEST(assertEqualSize(s.len, 0));
+    TEST(assertFalse(s.owned));
   }
 
   {
     string s = stringFromArray("foo");
     TEST(assertSame(s.chars, "foo"));
     TEST(assertEqualSize(s.len, 3));
+    TEST(assertFalse(s.owned));
   }
 
   {
     string s = stringFromRange("foo", &"foo"[3]);
     TEST(assertSame(s.chars, "foo"));
     TEST(assertEqualSize(s.len, 3));
+    TEST(assertFalse(s.owned));
   }
 
   {
@@ -40,6 +45,50 @@ static TestResult testStringCreation() {
     string s = stringFromRange(&"foo"[1], &"foo"[0]);
     TEST(assertSame(s.chars, &"foo"[1]));
     TEST(assertEqualSize(s.len, 0));
+  }
+
+  {
+    string s = stringFromPrint("s: %d", 42);
+    TEST(assertEqualSize(s.len, 5));
+    TEST(assertEqualString(s.chars, "s: 42"));
+    ABORT(assertTrue(s.owned));
+    strFree(&s);
+  }
+
+  {
+    string s = stringFromPrint("a longer text: %d", 42);
+    TEST(assertEqualSize(s.len, 17));
+    TEST(assertEqualString(s.chars, "a longer text: 42"));
+    ABORT(assertTrue(s.owned));
+    strFree(&s);
+  }
+
+  return result;
+}
+
+
+static TestResult testStringDeletion() {
+  TestResult result = {};
+
+  {
+    string s = stringFromPrint("s: %d", 42);
+    strFree(&s);
+    TEST(assertSame(s.chars, ""));
+    TEST(assertEqualInt(s.len, 0));
+  }
+
+  {
+    string s = stringFromArray("foo");
+    strFree(&s);
+    TEST(assertSame(s.chars, ""));
+    TEST(assertEqualInt(s.len, 0));
+  }
+
+  {
+    string s = stringFromRange("foo", &"foo"[3]);
+    strFree(&s);
+    TEST(assertSame(s.chars, ""));
+    TEST(assertEqualInt(s.len, 0));
   }
 
   return result;
@@ -97,6 +146,7 @@ static TestResult testStringComparison() {
 TestResult str_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<str>", "Test strings.");
   addTest(&suite, &testStringCreation,   "testStringCreation");
+  addTest(&suite, &testStringDeletion,   "testStringDeletion");
   addTest(&suite, &testStringComparison, "testStringComparison");
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);

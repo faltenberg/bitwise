@@ -1,5 +1,5 @@
 CC = clang
-OPT_DEBUG   = -O0 -g -Wall
+OPT_DEBUG   = -O0 -g -Wall -Wno-unused-function
 OPT_RELEASE = -O3
 
 OPT = ${OPT_DEBUG}
@@ -58,17 +58,17 @@ LINK_ARGS = $(foreach d, lib/ $(wildcard deps/*/lib/), -L$d)
 LIBS      = $(foreach x, ${LIBNAMES}, -l$x)
 
 
-bin/ion: deps lib
+bin/ion: lib
 	$(eval LIBNAMES := )
 	mkdir -p bin/
 	$(CC) ${OPT} ${INC_ARGS} ${LINK_ARGS} -o $@ ${SRC_FILES} src/ion.c ${LIBS}
 
-bin/print_sizes: deps lib
+bin/print_sizes: lib
 	$(eval LIBNAMES := )
 	mkdir -p bin/
 	$(CC) ${OPT} ${INC_ARGS} ${LINK_ARGS} -o $@ ${SRC_FILES} src/print_sizes.c ${LIBS}
 
-bin/test: deps lib
+bin/test: lib deps_cunit
 	$(eval LIBNAMES := cunit)
 	mkdir -p bin/
 	$(CC) ${OPT} ${INC_ARGS} ${LINK_ARGS} -o $@ ${SRC_FILES} test/*.c ${LIBS}
@@ -79,9 +79,9 @@ exe: bin/print_sizes bin/ion
 
 
 .PHONY: lib
-lib: deps
+lib:
 
 
-.PHONY: deps
-deps:
-	$(MAKE) -C $(wildcard deps/*/)
+.PHONY: deps_cunit
+deps_cunit:
+	$(MAKE) -C $(wildcard deps/cunit/)
