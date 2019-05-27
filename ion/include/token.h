@@ -8,8 +8,9 @@
  *
  * Source code is divided into a stream of `Token`s by the lexer. `Tokens` with similar properties
  * belong to the same `TokenKind` such as numbers and identiers. For each token the locations of
- * their first and last character within the source and the raw string are stored. If the lexer
- * detects some grammar violation it will return a `TOKEN_ERROR` token describing the error.
+ * their first and last character within the source. Each token contains a string with the token
+ * characters, which is a window into the source code. If the lexer detects some grammar violation
+ * it will return a `TOKEN_ERROR` token describing the error.
  *
  *
  * Example
@@ -25,58 +26,55 @@
  *   Source src = sourceFromString("x + 42; 1x // error\n"));
  *   Lexer lexer = lexerFromSource(&src);
  *
- *   Token t = nextToken(&lexer);
- *   assert(t.kind != TOKEN_NONE);  // TOKEN_NONE is an invalid token
- *   assert(t.kind == TOKEN_NAME);
+ *   Token token = nextToken(&lexer);
+ *   assert(token.kind != TOKEN_NONE);  // TOKEN_NONE is an invalid token
+ *   assert(token.kind == TOKEN_NAME);
  *   // tokens have a start and end location within the source
  *   // start and end is the occurance of the first and the last character of the token
- *   assert(t.start.line == 1);
- *   assert(t.start.pos == 1);
- *   assert(t.end.line == 1);
- *   assert(t.end.pos == 1);
- *   assert(cstrequal(t.source->fileName, "<cstring>"));
- *   assert(cstrequal(t.chars, "x"));  // get token characters
+ *   assert(token.start.line == 1);
+ *   assert(token.start.pos == 1);
+ *   assert(token.end.line == 1);
+ *   assert(token.end.pos == 1);
+ *   assert(cstrequal(token.source->fileName, "<cstring>"));
+ *   assert(cstrequal(token.chars, "x"));  // get token characters
  *
- *   t = nextToken(&lexer);
- *   assert(t.kind == TOKEN_OP);
- *   assert(t.start.pos == 3);
- *   assert(t.end.pos == 3);
- *   assert(cstrequal(t.chars, "+"));
+ *   token = nextToken(&lexer);
+ *   assert(token.kind == TOKEN_SYMBOL);
+ *   assert(token.start.pos == 3);
+ *   assert(token.end.pos == 3);
+ *   assert(cstrequal(token.chars, "+"));
  *
- *   t = nextToken(&lexer);
- *   assert(t.kind == TOKEN_INT);
- *   assert(t.start.pos == 5);
- *   assert(t.end.pos == 6);
- *   assert(cstrequal(t.chars, "42"));
+ *   token = nextToken(&lexer);
+ *   assert(token.kind == TOKEN_INT);
+ *   assert(token.start.pos == 5);
+ *   assert(token.end.pos == 6);
+ *   assert(cstrequal(token.chars, "42"));
  *
- *   t = nextToken(&lexer);
- *   assert(t.kind == TOKEN_SEP);
- *   assert(t.start.pos == 7);
- *   assert(t.end.pos == 7);
- *   assert(cstrequal(t.chars, ";"));
+ *   token = nextToken(&lexer);
+ *   assert(token.kind == TOKEN_SYMBOL);
+ *   assert(token.start.pos == 7);
+ *   assert(token.end.pos == 7);
+ *   assert(cstrequal(token.chars, ";"));
  *
- *   t = nextToken(&lexer);
- *   assert(t.kind == TOKEN_ERROR);
- *   assert(t.start.pos == 9);
- *   assert(t.end.pos == 10);
- *   string line = getLine(t.source, t.start.line);
- *   printf("%.*s:%d:%d: error in \"%.*s\": %.*s\n",
- *          t.source->fileName.len, t.source->fileName.chars, t.start.line, t.start.pos,
- *          line.len, line.chars, t.chars.len, t.chars.chars);
+ *   token = nextToken(&lexer);
+ *   assert(token.kind == TOKEN_ERROR);
+ *   assert(token.start.pos == 9);
+ *   assert(token.end.pos == 10);
+ *   printf("%.*s", token.chars.len, token.chars.chars);
  *
  *   // comments are tokens as well (note that \n is not part of the comment)
- *   t = nextToken(&lexer);
- *   assert(t.kind == TOKEN_COMMENT);
- *   assert(t.start.pos == 12);
- *   assert(t.end.pos == 19);
- *   assert(cstrequal(t.chars, "// error"));
+ *   token = nextToken(&lexer);
+ *   assert(token.kind == TOKEN_COMMENT);
+ *   assert(token.start.pos == 12);
+ *   assert(token.end.pos == 19);
+ *   assert(cstrequal(token.chars, "// error"));
  *
- *   t = nextToken(&lexer);
- *   assert(t.kind == TOKEN_EOF);
- *   assert(t.start.line == 2);
- *   assert(t.start.pos == 1);
- *   assert(t.end.pos == 1);
- *   assert(cstrequal(t.chars, ""));
+ *   token = nextToken(&lexer);
+ *   assert(token.kind == TOKEN_EOF);
+ *   assert(token.start.line == 2);
+ *   assert(token.start.pos == 1);
+ *   assert(token.end.pos == 1);
+ *   assert(cstrequal(token.chars, ""));
  *
  *   deleteSource(&src);
  * }

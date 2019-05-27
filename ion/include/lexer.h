@@ -19,9 +19,10 @@
  * ```c {.line-numbers}
  * #include "lexer.h"
  * #include <assert.h>
+ * #include <stdio.h>
  *
  * int main() {
- *   Source src = sourceFromString("x = 2;");
+ *   Source src = sourceFromString("x = 2; $");
  *   Lexer lexer = lexerFromSource(&src);
  *
  *   Token token = nextToken(&lexer);
@@ -45,11 +46,23 @@
  *   assert(token.start.pos == 6);
  *
  *   token = nextToken(&lexer);
+ *   assert(token.kind == TOKEN_ERROR);
+ *   assert(token.start.line == 1);
+ *   assert(token.start.pos == 8);
+ *   printf("%.*s", token.chars.len, token.chars.chars);
+ *
+ *   token = nextToken(&lexer);
  *   assert(token.kind == TOKEN_EOF);
  *   assert(token.start.line == 1);
- *   assert(token.start.pos == 7);
+ *   assert(token.start.pos == 9);
  *
  *   // finished, only TOKEN_EOF from now on
+ *   token = nextToken(&lexer);
+ *   assert(token.kind == TOKEN_EOF);
+ *   assert(token.start.line == 1);
+ *   assert(token.start.pos == 9);
+ *
+ *   deleteLexer(&lexer);
  *   deleteSource(&src);
  * }
  * ```
@@ -58,6 +71,7 @@
 
 #include "source.h"
 #include "token.h"
+#include "sbuffer.h"
 
 
 /**
@@ -69,6 +83,7 @@
  * - **field:** `currentChar` - the current character
  * - **field:** `currentLoc`  - the location of the current token
  * - **field:** `nextLoc`     - the location of the next token used for counting lines and EOF
+ * - **field:** `errorMsgs`   - a buffer to store error messages
  */
 typedef struct Lexer {
   const Source* source;
@@ -76,6 +91,7 @@ typedef struct Lexer {
   char          currentChar;
   TokenLoc      currentLoc;
   TokenLoc      nextLoc;
+  SBUF(char*)   errorMsgs;
 } Lexer;
 
 
@@ -87,6 +103,14 @@ typedef struct Lexer {
  */
 Lexer lexerFromSource(const Source* src);
 
+
+/**
+ * `deleteLexer()` frees the lexer's allocated resources. Since it only borrows the source, the
+ * source must be destroyed separately.
+ *
+ * - **param:** `lexer` - the pointer to the lexer to be deleted
+ */
+void deleteLexer(Lexer* lexer);
 
 /**
  * `nextToken()` advances forward and returns the next token from the source code.

@@ -21,7 +21,7 @@ string stringFromRange(const char* start, const char* end) {
  * It will then jump back and allocate enough memory to actually print the string.
  */
 string stringFromPrint(const char* format, ...) {
-  char* buffer;
+  char* buffer = NULL;
   int size = 0;
   va_list args;
   again:

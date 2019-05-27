@@ -115,7 +115,7 @@ Source sourceFromFile(const char* name);
  * `deleteSource()` deletes the contents of a `Source` and replaces the content with an empty
  * string. `status` is set to `SOURCE_NONE` to indicate that it should not be used anymore.
  *
- * - **param:** `source` - a pointer to the source to be freed
+ * - **param:** `source` - the pointer to the source to be deleted
  */
 void deleteSource(Source* source);
 

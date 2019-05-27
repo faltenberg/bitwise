@@ -48,7 +48,10 @@ static bool __assertEqualToken(const char* file, int line, Token t, Token exp) {
 
   if (t.kind != exp.kind) {
     printVerbose(RED "ERROR: " RST);
-    printVerbose("expected Token [%s] == [%s]\n", str(t.kind).chars, str(exp.kind).chars);
+    string tkind = str(t.kind);
+    string ekind = str(exp.kind);
+    printVerbose("expected Token [%.*s] == [%.*s]\n",
+                 tkind.len, tkind.chars, ekind.len, ekind.chars);
     return false;
   }
 
@@ -76,10 +79,10 @@ static bool __assertEqualToken(const char* file, int line, Token t, Token exp) {
 
 
 typedef struct TestCase {
-  char*       name;
-  char*       input;
   const char* file;
   int         line;
+  char*       name;
+  char*       input;
   SBUF(Token) tokens;
 } TestCase;
 
@@ -102,13 +105,14 @@ static TestResult testFunc() {
      *   token(...)
      * );
      *
-     * Then testCase->line is the line with ");". By subtracting numTok and adding i,
-     * we can pass the correct line to __assertEqualToken().
+     * Then testCase->line is the line with ");". By subtracting numTok and adding i, we can pass
+     * the correct line to __assertEqualToken(). If numTok is wrong, then a wrong line is passed.
      */
     int line = testCase->line - sbufLength(testCase->tokens) + i;
     TEST(__assertEqualToken(testCase->file, line, t, testCase->tokens[i]));
   }
 
+  deleteLexer(&lexer);
   deleteSource(&src);
   return result;
 }
@@ -185,10 +189,67 @@ static TestResult testCreation() {
     TEST(assertEqualChar(lexer.currentChar, 0));
     TEST(assertEqualTokenLoc(lexer.currentLoc, loc(0, 0)));
     TEST(assertEqualTokenLoc(lexer.nextLoc, loc(1, 1)));
+    deleteLexer(&lexer);
     deleteSource(&src);
   }
 
   return result;
+}
+
+
+static TestResult testErrorMsgs() {
+  TestResult result = {};
+
+  {
+    Source src = sourceFromString("");
+    Lexer lexer = lexerFromSource(&src);
+    TEST(assertNull(lexer.errorMsgs));
+    deleteLexer(&lexer);
+    deleteSource(&src);
+  }
+
+  {
+    Source src = sourceFromString("");
+    Lexer lexer = lexerFromSource(&src);
+    nextToken(&lexer);
+    TEST(assertNull(lexer.errorMsgs));
+    deleteLexer(&lexer);
+    deleteSource(&src);
+  }
+
+  {
+    Source src = sourceFromString("$");
+    Lexer lexer = lexerFromSource(&src);
+    nextToken(&lexer);
+    ABORT(assertNotNull(lexer.errorMsgs));
+    TEST(assertEqualInt(sbufLength(lexer.errorMsgs), 1));
+    deleteLexer(&lexer);
+    deleteSource(&src);
+  }
+
+  {
+    Source src = sourceFromString("$ /*");
+    Lexer lexer = lexerFromSource(&src);
+    nextToken(&lexer);
+    nextToken(&lexer);
+    ABORT(assertNotNull(lexer.errorMsgs));
+    TEST(assertEqualInt(sbufLength(lexer.errorMsgs), 2));
+    deleteLexer(&lexer);
+    deleteSource(&src);
+  }
+
+  {
+    Source src = sourceFromString("$");
+    Lexer lexer = lexerFromSource(&src);
+    nextToken(&lexer);
+    nextToken(&lexer);
+    deleteLexer(&lexer);
+    ABORT(assertNull(lexer.errorMsgs));
+    deleteSource(&src);
+  }
+
+  return result;
+
 }
 
 
@@ -397,6 +458,11 @@ static void addTestsTokenBinInt(TestSuite* suite) {
   in = "0b";
   createTest(suite, in, 1,
     token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")
+  );
+
+  in = "0b_";
+  createTest(suite, in, 1,
+    token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "")
   );
 }
 
@@ -1079,7 +1145,8 @@ static void addTestsStatements(TestSuite* suite) {
 
 TestResult lexer_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<lexer>", "Test lexer.");
-  addTest(&suite, &testCreation, "testCreation");
+  addTest(&suite, &testCreation,  "testCreation");
+  addTest(&suite, &testErrorMsgs, "testErrorMsgs");
   addTestsEndOfLine(&suite);
   addTestsTokenName(&suite);
   addTestsTokenInt(&suite);
