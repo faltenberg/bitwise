@@ -1,5 +1,9 @@
 #include "arena.h"
+#include "error.h"
 #include "lexer.h"
+#include "loc.h"
+#include "number.h"
+#include "parser.h"
 #include "sbuffer.h"
 #include "source.h"
 #include "str.h"
@@ -38,18 +42,33 @@ int main() {
   PRINT_SIZE(string);
   printf("\n");
 
+  printf("<number.h>\n");
+  PRINT_SIZE(Number);
+  printf("\n");
+
   printf("<source.h>\n");
   PRINT_SIZE(SourceStatus);
   PRINT_SIZE(Source);
   printf("\n");
 
+  printf("<loc.h>\n");
+  PRINT_SIZE(Location);
+  printf("\n");
+
+  printf("<error.h>\n");
+  PRINT_SIZE(Error);
+  printf("\n");
+
   printf("<token.h>\n");
   PRINT_SIZE(TokenKind);
-  PRINT_SIZE(TokenLoc);
   PRINT_SIZE(Token);
   printf("\n");
 
   printf("<lexer.h>\n");
   PRINT_SIZE(Lexer);
+  printf("\n");
+
+  printf("<parser.h>\n");
+  PRINT_SIZE(ASTNode);
   printf("\n");
 }

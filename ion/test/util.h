@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #include "str.h"
+#include "number.h"
 
 
 #ifndef FILENAME
@@ -84,6 +85,23 @@ static bool __assertEqualStr(const char* file, int line, string s, const char* c
     printVerbose("in \"%.*s\"%s[%d] expected [%c] == [%c]\n",
                  (s.len <= 5 ? s.len : 5), s.chars, (s.len > 5 ? "~" : ""), index,
                  s.chars[index], exp.chars[index]);
+    return false;
+  }
+}
+
+
+#define assertEqualNumber(n, exp)  __assertEqualNumber(__FILE__, __LINE__, n, exp)
+static bool __assertEqualNumber(const char* file, int line, Number num, Number exp) {
+  printVerbose(__PROMPT, file, line);
+
+  if (false) {  // TODO
+    printVerbose(GRN "OK\n" RST);
+    return true;
+  } else {
+    printVerbose(RED "ERROR: " RST);
+    printVerbose("expected Number [%.*s] == [%.*s] (%s)\n",
+                 sbufLength(num.value), num.value, sbufLength(exp.value), exp.value,
+                 "not implemented");
     return false;
   }
 }
