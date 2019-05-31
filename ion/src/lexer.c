@@ -1,6 +1,7 @@
 #include "lexer.h"
 
 #include "str.h"
+#include "error.h"
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -13,44 +14,10 @@
 #define RST "\e[39m"
 
 
-static TokenLoc loc(int line, int pos) {
-  return (TokenLoc){ .line=line, .pos=pos };
-}
-
-
 Lexer lexerFromSource(const Source* src) {
   return (Lexer){ .source=src, .index=0, .currentChar='\0',
-                  .currentLoc=loc(0, 0), .nextLoc=loc(1, 1), .errorMsgs=NULL
+                  .currentLoc=loc(0, 0), .nextLoc=loc(1, 1)
                 };
-}
-
-
-void deleteLexer(Lexer* lexer) {
-  for (int i = 0; i < sbufLength(lexer->errorMsgs); i++) {
-    free(lexer->errorMsgs[i]);
-  }
-  sbufFree(lexer->errorMsgs);
-}
-
-
-static string genErrorMsg(Token token, TokenLoc errorLoc) {
-  string fileName = token.source->fileName;
-  string line = getLine(token.source, errorLoc.line);
-  line.len = (line.chars[line.len-1] == '\n') ? line.len - 1 : line.len;
-  const char* spaces = "                                                  ";
-  const char* tildes = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
-  int intend = token.start.pos - 1;
-  int pre = errorLoc.pos - token.start.pos;
-  pre = (pre < 0) ? 0 : pre;
-  int post = token.end.pos - errorLoc.pos;
-  post = (post < 0) ? 0 : post;
-
-  return stringFromPrint("%.*s:%d:%d: "RED"error:"RST" %.*s\n"
-                         "%.*s\n"
-                         "%.*s"GRN"%.*s%s%.*s"RST"\n",
-                         fileName.len, fileName.chars, errorLoc.line, errorLoc.pos,
-                         token.chars.len, token.chars.chars, line.len, line.chars,
-                         intend, spaces, pre, tildes, "^", post, tildes);
 }
 
 
@@ -114,7 +81,8 @@ Token nextToken(Lexer* lexer) {
   const char* start = &lexer->source->content.chars[lexer->index];
   char c = nextChar(lexer);
   token.start = lexer->currentLoc;
-  TokenLoc errorLoc = loc(0, 0);
+  Location errorLoc = loc(0, 0);
+  string errorMsg = stringFromArray("");
 
   switch (c) {
     case '\0':
@@ -159,12 +127,12 @@ Token nextToken(Lexer* lexer) {
         if (!hasDigit) {
           token.kind = TOKEN_ERROR;
           errorLoc = lexer->currentLoc;
-          token.chars = stringFromArray("hex integer must have at least one digit");
+          errorMsg = stringFromArray("hex integer must have at least one digit");
         } else if (isalpha(peekChar(lexer))) {
           nextChar(lexer);
           token.kind = TOKEN_ERROR;
           errorLoc = lexer->currentLoc;
-          token.chars = stringFromArray("invalid hex integer format");
+          errorMsg = stringFromArray("invalid hex integer format");
           for (char c = peekChar(lexer); isalnum(c) || c == '_'; c = peekChar(lexer)) {
             nextChar(lexer);
           }
@@ -182,12 +150,12 @@ Token nextToken(Lexer* lexer) {
         if (!hasDigit) {
           token.kind = TOKEN_ERROR;
           errorLoc = lexer->currentLoc;
-          token.chars = stringFromArray("bin integer must have at least one digit");
+          errorMsg = stringFromArray("bin integer must have at least one digit");
         } else if (isalnum(peekChar(lexer))) {
           nextChar(lexer);
           token.kind = TOKEN_ERROR;
           errorLoc = lexer->currentLoc;
-          token.chars = stringFromArray("invalid bin integer format");
+          errorMsg = stringFromArray("invalid bin integer format");
           for (char c = peekChar(lexer); isalnum(c) || c == '_'; c = peekChar(lexer)) {
             nextChar(lexer);
           }
@@ -207,7 +175,7 @@ Token nextToken(Lexer* lexer) {
         nextChar(lexer);
         token.kind = TOKEN_ERROR;
         errorLoc = lexer->currentLoc;
-        token.chars = stringFromArray("invalid integer format");
+        errorMsg = stringFromArray("invalid integer format");
         for (char c = peekChar(lexer); isalnum(c); c = peekChar(lexer)) {
           nextChar(lexer);
         }
@@ -281,7 +249,7 @@ Token nextToken(Lexer* lexer) {
         if (token.kind != TOKEN_COMMENT) {
           token.kind = TOKEN_ERROR;
           errorLoc = token.start;
-          token.chars = stringFromArray("unclosed multi-line comment");
+          errorMsg = stringFromArray("unclosed multi-line comment");
         }
       }
     } break;
@@ -290,20 +258,19 @@ Token nextToken(Lexer* lexer) {
     {
       token.kind = TOKEN_ERROR;
       errorLoc = lexer->currentLoc;
-      token.chars = stringFromPrint("could not parse character '%c' to token", lexer->currentChar);
+      errorMsg = stringFromArray("illegal character");
     } break;
   }
 
   token.end = lexer->currentLoc;
   const char* end = &lexer->source->content.chars[lexer->index];
-  if (token.kind != TOKEN_ERROR) {
-    token.chars = stringFromRange(start, (token.kind == TOKEN_EOF) ? end-1 : end);
-  } else {
-    string msg = genErrorMsg(token, errorLoc);
-    strFree(&token.chars);
-    token.chars = msg;
-    sbufPush(lexer->errorMsgs, (char*) msg.chars);
+  token.chars = stringFromRange(start, (token.kind == TOKEN_EOF) ? end-1 : end);
+  if (token.kind == TOKEN_ERROR) {
+    token.error = (Error*) malloc(sizeof(Error));
+    *token.error = generateError(errorLoc, token.source, token.start, token.end,
+                                 errorMsg.chars);
   }
 
   return token;
 }
+

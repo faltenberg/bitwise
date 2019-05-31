@@ -10,7 +10,8 @@
  * belong to the same `TokenKind` such as numbers and identiers. For each token the locations of
  * their first and last character within the source. Each token contains a string with the token
  * characters, which is a window into the source code. If the lexer detects some grammar violation
- * it will return a `TOKEN_ERROR` token describing the error.
+ * it will return a `TOKEN_ERROR` token describing the error. The token owns the error. Since the
+ * error has allocated memory for the message, it must be freed!
  *
  *
  * Example
@@ -49,6 +50,7 @@
  *   assert(token.start.pos == 5);
  *   assert(token.end.pos == 6);
  *   assert(cstrequal(token.chars, "42"));
+ *   printf("%.*s", token.chars.len, token.chars.chars);
  *
  *   token = nextToken(&lexer);
  *   assert(token.kind == TOKEN_SYMBOL);
@@ -60,7 +62,8 @@
  *   assert(token.kind == TOKEN_ERROR);
  *   assert(token.start.pos == 9);
  *   assert(token.end.pos == 10);
- *   printf("%.*s", token.chars.len, token.chars.chars);
+ *   printf("%.*s", token.error->message.len, token.error->message.chars);
+ *   deleteError(token.error);  // must be freed
  *
  *   // comments are tokens as well (note that \n is not part of the comment)
  *   token = nextToken(&lexer);
@@ -82,8 +85,10 @@
  */
 
 
-#import "source.h"
-#import "str.h"
+#include "source.h"
+#include "str.h"
+#include "loc.h"
+#include "error.h"
 
 #include <stddef.h>
 
@@ -122,20 +127,6 @@ string str(TokenKind kind);
 
 
 /**
- * `TokenLoc` stores the line and position of a token within a source file. Counting lines in a
- * source file starts with line, just like counting characters in a line. If the location is
- * given, then the line can be extracted with `getLine()` from the `Source`.
- *
- * - **field:** `line` - the line within the source
- * - **field:** `pos`  - the position within the line
- */
-typedef struct TokenLoc {
-  unsigned int line;
-  unsigned int pos;
-} TokenLoc;
-
-
-/**
  * `Token` is the smallest entity in a source file. Each token is defined by some regular
  * expression in some grammar. `Token` stores all the information that is necessary to distinguish
  * the token type and its position in the source as well as the underlying characters. The token
@@ -147,13 +138,15 @@ typedef struct TokenLoc {
  * - **field:** `start`  - the location of the token's first character within the source
  * - **field:** `end`    - the location of the token's last character within the source
  * - **field:** `chars`  - the string containing the token characters
+ * - **field:** `error`  - the error with more information if token kind is `TOKEN_ERROR`
  */
 typedef struct Token {
   TokenKind     kind;
   const Source* source;
-  TokenLoc      start;
-  TokenLoc      end;
+  Location      start;
+  Location      end;
   string        chars;
+  Error*        error;
 } Token;
 
 

@@ -66,6 +66,20 @@ static TestResult testCreation() {
     strFree(&error.message);
   }
 
+  {
+    Source src = sourceFromString("  /* *\n/");
+    Error error = generateError(loc(1, 3), &src, loc(1, 3), loc(2, 1),
+                                "unclosed multi-line comment");
+    TEST(assertEqualInt(error.location.line, 1));
+    TEST(assertEqualInt(error.location.pos, 3));
+    TEST(assertEqualStr(error.message,
+         "<cstring>:1:3: \e[31merror:\e[39m unclosed multi-line comment\n"
+         "  /* *\n  \e[32m^~~~~\e[39m\n"));
+    TEST(assertNull(error.cause));
+    deleteSource(&src);
+    strFree(&error.message);
+  }
+
   return result;
 }
 

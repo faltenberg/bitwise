@@ -89,9 +89,8 @@ typedef struct Lexer {
   const Source* source;
   int           index;
   char          currentChar;
-  TokenLoc      currentLoc;
-  TokenLoc      nextLoc;
-  SBUF(char*)   errorMsgs;
+  Location      currentLoc;
+  Location      nextLoc;
 } Lexer;
 
 
@@ -103,14 +102,6 @@ typedef struct Lexer {
  */
 Lexer lexerFromSource(const Source* src);
 
-
-/**
- * `deleteLexer()` frees the lexer's allocated resources. Since it only borrows the source, the
- * source must be destroyed separately.
- *
- * - **param:** `lexer` - the pointer to the lexer to be deleted
- */
-void deleteLexer(Lexer* lexer);
 
 /**
  * `nextToken()` advances forward and returns the next token from the source code.

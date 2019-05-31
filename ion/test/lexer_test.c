@@ -1,8 +1,8 @@
 #include "cunit.h"
+#include "util.h"
 
 #include "lexer.h"
 
-#include "util.h"
 #include "sbuffer.h"
 
 #include <stdarg.h>
@@ -10,24 +10,41 @@
 #include <string.h>
 
 
-static TokenLoc loc(int line, int pos) {
-  return (TokenLoc){ .line=line, .pos=pos };
+#define msg(loc, msg, line, spaces, indicator) \
+        "<cstring>:"loc": \e[31merror:\e[39m "msg"\n"line"\n"spaces"\e[32m"indicator"\e[39m\n"
+
+
+static Error* error(Location loc, const char* message) {
+  Error* error = (Error*) malloc(sizeof(Error));
+  error->location = loc;
+  error->message = stringFromArray(message);
+  error->cause = NULL;
+  return error;
 }
 
 
-static Token token(TokenKind kind, TokenLoc start, TokenLoc end, const char* chars) {
+static Token token(TokenKind kind, Location start, Location end, const char* chars) {
   return (Token){ .kind=kind, .source=NULL, .start=start, .end=end,
-                  .chars=stringFromArray(chars) };
+                  .chars=stringFromArray(chars), .error=NULL
+                };
 }
 
 
-static bool equalLoc(TokenLoc loc, TokenLoc exp) {
+static Token tokenError(Location start, Location end, const char* chars, Location errorLoc,
+                        const char* message) {
+  return (Token){ .kind=TOKEN_ERROR, .source=NULL, .start=start, .end=end,
+                  .chars=stringFromArray(chars), .error=error(errorLoc, message)
+                };
+}
+
+
+static bool equalLoc(Location loc, Location exp) {
   return loc.line == exp.line && loc.pos == exp.pos;
 }
 
 
-#define assertEqualTokenLoc(tl, exp)  __assertEqualTokenLoc(__FILE__, __LINE__, tl, exp)
-static bool __assertEqualTokenLoc(const char* file, int line, TokenLoc loc, TokenLoc exp) {
+#define assertEqualLocation(tl, exp)  __assertEqualLocation(__FILE__, __LINE__, tl, exp)
+static bool __assertEqualLocation(const char* file, int line, Location loc, Location exp) {
   printVerbose(__PROMPT, file, line);
 
   if (equalLoc(loc, exp)) {
@@ -35,7 +52,7 @@ static bool __assertEqualTokenLoc(const char* file, int line, TokenLoc loc, Toke
     return true;
   } else {
     printVerbose(RED "ERROR: " RST);
-    printVerbose("expected TokenLoc [%d:%d] == [%d:%d]\n",
+    printVerbose("expected Location [%d:%d] == [%d:%d]\n",
                  loc.line, loc.pos, exp.line, exp.pos);
     return false;
   }
@@ -45,7 +62,6 @@ static bool __assertEqualTokenLoc(const char* file, int line, TokenLoc loc, Toke
 #define assertEqualToken(t, exp)  __assertEqualToken(__FILE__, __LINE__, t, exp)
 static bool __assertEqualToken(const char* file, int line, Token t, Token exp) {
   printVerbose(__PROMPT, file, line);
-
   if (t.kind != exp.kind) {
     printVerbose(RED "ERROR: " RST);
     string tkind = str(t.kind);
@@ -54,27 +70,45 @@ static bool __assertEqualToken(const char* file, int line, Token t, Token exp) {
                  tkind.len, tkind.chars, ekind.len, ekind.chars);
     return false;
   }
-
   if (!equalLoc(t.start, exp.start)) {
     printVerbose(RED "ERROR: " RST);
-    printVerbose("expected TokenLoc [%d:%d] == [%d:%d]\n",
+    printVerbose("expected Location [%d:%d] == [%d:%d]\n",
                  t.start.line, t.start.pos, exp.start.line, exp.start.pos);
     return false;
   }
   if (!equalLoc(t.end, exp.end)) {
     printVerbose(RED "ERROR: " RST);
-    printVerbose("expected TokenLoc [%d:%d] == [%d:%d]\n",
+    printVerbose("expected Location [%d:%d] == [%d:%d]\n",
                  t.end.line, t.end.pos, exp.end.line, exp.end.pos);
     return false;
   }
-
   printVerbose(GRN "OK\n" RST);
 
-  if (exp.kind == TOKEN_ERROR) {
+  bool equal = __assertEqualStr(file, line, t.chars, exp.chars.chars);
+  if (!equal) {
+    return false;
+  }
+
+  if (exp.kind != TOKEN_ERROR) {
     return true;
   }
 
-  return __assertEqualStr(file, line, t.chars, exp.chars.chars);
+  equal = __assertNotNull(file, line, t.error);
+  if (!equal) {
+    return false;
+  }
+
+  printVerbose(__PROMPT, file, line);
+  if (!equalLoc(t.error->location, exp.error->location)) {
+    printVerbose(RED "ERROR: " RST);
+    printVerbose("expected Location [%d:%d] == [%d:%d]\n",
+                 t.error->location.line, t.error->location.pos,
+                 exp.error->location.line, exp.error->location.pos);
+    return false;
+  }
+  printVerbose(GRN "OK\n" RST);
+
+  return __assertEqualStr(file, line, t.error->message, exp.error->message.chars);
 }
 
 
@@ -98,7 +132,8 @@ static TestResult testFunc() {
   Lexer lexer = lexerFromSource(&src);
 
   for (int i = 0; i < sbufLength(testCase->tokens); i++) {
-    Token t = nextToken(&lexer);
+    Token token = nextToken(&lexer);
+    Token exp = testCase->tokens[i];
 
     /* Assume that all tests are created as
      * addTest(&suite, numTok,
@@ -109,10 +144,17 @@ static TestResult testFunc() {
      * the correct line to __assertEqualToken(). If numTok is wrong, then a wrong line is passed.
      */
     int line = testCase->line - sbufLength(testCase->tokens) + i;
-    TEST(__assertEqualToken(testCase->file, line, t, testCase->tokens[i]));
+    TEST(__assertEqualToken(testCase->file, line, token, exp));
+    if (token.kind == TOKEN_ERROR) {
+      deleteError(token.error);
+      free(token.error);
+    }
+    if (exp.kind == TOKEN_ERROR) {
+      deleteError(exp.error);
+      free(exp.error);
+    }
   }
 
-  deleteLexer(&lexer);
   deleteSource(&src);
   return result;
 }
@@ -187,9 +229,8 @@ static TestResult testCreation() {
     TEST(assertEqualStr(lexer.source->content, "foo bar"));
     TEST(assertEqualInt(lexer.index, 0));
     TEST(assertEqualChar(lexer.currentChar, 0));
-    TEST(assertEqualTokenLoc(lexer.currentLoc, loc(0, 0)));
-    TEST(assertEqualTokenLoc(lexer.nextLoc, loc(1, 1)));
-    deleteLexer(&lexer);
+    TEST(assertEqualLocation(lexer.currentLoc, loc(0, 0)));
+    TEST(assertEqualLocation(lexer.nextLoc, loc(1, 1)));
     deleteSource(&src);
   }
 
@@ -201,55 +242,10 @@ static TestResult testErrorMsgs() {
   TestResult result = {};
 
   {
-    Source src = sourceFromString("");
-    Lexer lexer = lexerFromSource(&src);
-    TEST(assertNull(lexer.errorMsgs));
-    deleteLexer(&lexer);
-    deleteSource(&src);
-  }
-
-  {
-    Source src = sourceFromString("");
-    Lexer lexer = lexerFromSource(&src);
-    nextToken(&lexer);
-    TEST(assertNull(lexer.errorMsgs));
-    deleteLexer(&lexer);
-    deleteSource(&src);
-  }
-
-  {
-    Source src = sourceFromString("$");
-    Lexer lexer = lexerFromSource(&src);
-    nextToken(&lexer);
-    ABORT(assertNotNull(lexer.errorMsgs));
-    TEST(assertEqualInt(sbufLength(lexer.errorMsgs), 1));
-    deleteLexer(&lexer);
-    deleteSource(&src);
-  }
-
-  {
-    Source src = sourceFromString("$ /*");
-    Lexer lexer = lexerFromSource(&src);
-    nextToken(&lexer);
-    nextToken(&lexer);
-    ABORT(assertNotNull(lexer.errorMsgs));
-    TEST(assertEqualInt(sbufLength(lexer.errorMsgs), 2));
-    deleteLexer(&lexer);
-    deleteSource(&src);
-  }
-
-  {
-    Source src = sourceFromString("$");
-    Lexer lexer = lexerFromSource(&src);
-    nextToken(&lexer);
-    nextToken(&lexer);
-    deleteLexer(&lexer);
-    ABORT(assertNull(lexer.errorMsgs));
-    deleteSource(&src);
+// TODO
   }
 
   return result;
-
 }
 
 
@@ -352,7 +348,8 @@ static void addTestsTokenInt(TestSuite* suite) {
 
   in = "0123abc";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 7), "")
+    tokenError(loc(1, 1), loc(1, 7), "0123abc", loc(1, 5),
+               msg("1:5", "invalid integer format", "0123abc", "", "~~~~^~~"))
   );
 
   in = "0__2_";
@@ -387,22 +384,26 @@ static void addTestsTokenHexInt(TestSuite* suite) {
 
   in = "1x123";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
+    tokenError(loc(1, 1), loc(1, 5), "1x123", loc(1, 2),
+               msg("1:2", "invalid integer format", "1x123", "", "~^~~~"))
   );
 
   in = "00x123";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 6), "")
+    tokenError(loc(1, 1), loc(1, 6), "00x123", loc(1, 3),
+               msg("1:3", "invalid integer format", "00x123", "", "~~^~~~"))
   );
 
   in = "0xABCg123";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 9), "")
+    tokenError(loc(1, 1), loc(1, 9), "0xABCg123", loc(1, 6),
+               msg("1:6", "invalid hex integer format", "0xABCg123", "", "~~~~~^~~~"))
   );
 
   in = "0x";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")
+    tokenError(loc(1, 1), loc(1, 2), "0x", loc(1, 2),
+               msg("1:2", "hex integer must have at least one digit", "0x", "", "~^"))
   );
 
   in = "0xABCD_1234";
@@ -412,7 +413,8 @@ static void addTestsTokenHexInt(TestSuite* suite) {
 
   in = "0x_";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "0x_")
+    tokenError(loc(1, 1), loc(1, 3), "0x_", loc(1, 3),
+               msg("1:3", "hex integer must have at least one digit", "0x_", "", "~~^"))
   );
 
   in = "0X__12AB__";
@@ -437,32 +439,38 @@ static void addTestsTokenBinInt(TestSuite* suite) {
 
   in = "1b0011";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 6), "")
+    tokenError(loc(1, 1), loc(1, 6), "1b0011", loc(1, 2),
+               msg("1:2", "invalid integer format", "1b0011", "", "~^~~~~"))
   );
 
   in = "00b0011";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 7), "")
+    tokenError(loc(1, 1), loc(1, 7), "00b0011", loc(1, 3),
+               msg("1:3", "invalid integer format", "00b0011", "", "~~^~~~~"))
   );
 
   in = "0b012";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
+    tokenError(loc(1, 1), loc(1, 5), "0b012", loc(1, 5),
+               msg("1:5", "invalid bin integer format", "0b012", "", "~~~~^"))
   );
 
   in = "0b0a1";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
+    tokenError(loc(1, 1), loc(1, 5), "0b0a1", loc(1, 4),
+               msg("1:4", "invalid bin integer format", "0b0a1", "", "~~~^~"))
   );
 
   in = "0b";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")
+    tokenError(loc(1, 1), loc(1, 2), "0b", loc(1, 2),
+               msg("1:2", "bin integer must have at least one digit", "0b", "", "~^"))
   );
 
   in = "0b_";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "")
+    tokenError(loc(1, 1), loc(1, 3), "0b_", loc(1, 3),
+               msg("1:3", "bin integer must have at least one digit", "0b_", "", "~~^"))
   );
 }
 
@@ -655,9 +663,19 @@ static void addTestsTokenOperator(TestSuite* suite) {
     token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "+")
   );
 
+  in = "++";
+  createTest(suite, in, 1,
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 2), "++")
+  );
+
   in = "-";
   createTest(suite, in, 1,
     token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "-")
+  );
+
+  in = "--";
+  createTest(suite, in, 1,
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 2), "--")
   );
 
   in = "*";
@@ -712,12 +730,14 @@ static void addTestsTokenComment(TestSuite* suite) {
 
   in = "/*";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 2), "")
+    tokenError(loc(1, 1), loc(1, 2), "/*", loc(1, 1),
+               msg("1:1", "unclosed multi-line comment", "/*", "", "^~"))
   );
 
   in = "/**";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "")
+    tokenError(loc(1, 1), loc(1, 3), "/**", loc(1, 1),
+               msg("1:1", "unclosed multi-line comment", "/**", "", "^~~"))
   );
 
   in = "/**/";
@@ -727,12 +747,14 @@ static void addTestsTokenComment(TestSuite* suite) {
 
   in = "/*/";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "")
+    tokenError(loc(1, 1), loc(1, 3), "/*/", loc(1, 1),
+               msg("1:1", "unclosed multi-line comment", "/*/", "", "^~~"))
   );
 
   in = "/** /";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 5), "")
+    tokenError(loc(1, 1), loc(1, 5), "/** /", loc(1, 1),
+               msg("1:1", "unclosed multi-line comment", "/** /", "", "^~~~~"))
   );
 
   in = "/*\\n*/";
@@ -742,12 +764,14 @@ static void addTestsTokenComment(TestSuite* suite) {
 
   in = "/*\\n";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(1, 3), "/*\n")
+    tokenError(loc(1, 1), loc(1, 3), "/*\n", loc(1, 1),
+               msg("1:1", "unclosed multi-line comment", "/*", "", "^~~"))
   );
 
   in = "/* *\\n/";
   createTest(suite, in, 1,
-    token(TOKEN_ERROR, loc(1, 1), loc(2, 1), "/* *\n/")
+    tokenError(loc(1, 1), loc(2, 1), "/* *\n/", loc(1, 1),
+               msg("1:1", "unclosed multi-line comment", "/* *", "", "^~~~~"))
   );
 
   in = "/*//*/";
@@ -842,7 +866,9 @@ static void addTestsDeclarations(TestSuite* suite) {
     token(TOKEN_NAME,    loc(1,  5), loc(1,  7), "a_1"),
     token(TOKEN_SYMBOL,  loc(1,  9), loc(1,  9), ":"),
     token(TOKEN_SYMBOL,  loc(1, 10), loc(1, 10), "="),
-    token(TOKEN_ERROR,   loc(1, 12), loc(1, 14), ""),
+    tokenError(loc(1, 12), loc(1, 14), "0x_", loc(1, 14),
+               msg("1:14", "hex integer must have at least one digit",
+                   "var a_1 := 0x_;", "           ", "~~^")),
     token(TOKEN_SYMBOL,  loc(1, 15), loc(1, 15), ";"),
     token(TOKEN_EOF,     loc(1, 16), loc(1, 16), "")
   );

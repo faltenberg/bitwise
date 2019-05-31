@@ -13,7 +13,7 @@
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
 #define MAX(a, b) ((a) >= (b) ? (a) : (b))
 
-  
+
 Error createError(Location loc, string message, Error* cause) {
   return (Error){ .message=message, .location=loc, .cause=cause };
 }
@@ -47,17 +47,18 @@ Error generateError(Location loc, const Source* src, Location start, Location en
   int intend = MAX(0, start.pos - 1);
   int pre = MAX(0, error.location.pos - start.pos);
   int post = MAX(0, end.pos - error.location.pos);
+  post = (error.location.line < end.line) ? line.len - intend : post;
   {
     again1:
     error.message.chars = (char*) malloc(error.message.len);
     int count = snprintf((char*) error.message.chars, error.message.len,
                         "%.*s:%d:%d: "RED"error:"RST" %.*s\n"
                         "%.*s\n"
-                        "%.*s"GRN"%.*s%s%.*s"RST"\n",
+                        "%.*s"GRN"%.*s^%.*s"RST"\n",
                         fileName.len, fileName.chars, error.location.line, error.location.pos,
                         message.len, message.chars,
                         line.len, line.chars,
-                        intend, spaces, pre, tildes, "^", post, tildes);
+                        intend, spaces, pre, tildes, post, tildes);
     if (count >= error.message.len) {
       free((char*) error.message.chars);
       error.message.len = count + 1;
