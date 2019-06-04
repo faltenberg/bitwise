@@ -1,4 +1,5 @@
 #include "arena.h"
+#include "ast.h"
 #include "error.h"
 #include "lexer.h"
 #include "loc.h"
@@ -68,7 +69,10 @@ int main() {
   PRINT_SIZE(Lexer);
   printf("\n");
 
-  printf("<parser.h>\n");
+  printf("<ast.h>\n");
+  PRINT_SIZE(ExprKind);
+  PRINT_SIZE(ASTExpr);
+  PRINT_SIZE(ASTKind);
   PRINT_SIZE(ASTNode);
   printf("\n");
 }

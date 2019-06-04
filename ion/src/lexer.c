@@ -198,8 +198,8 @@ Token nextToken(Lexer* lexer) {
       }
     } break;
 
-    // operators "+" "++" "&" "&&" "|" "||"
-    case '+':  case '&':  case '|':
+    // operators "&" "&&" "|" "||"
+    case '&':  case '|':
     {
       token.kind = TOKEN_SYMBOL;
       if (peekChar(lexer) == lexer->currentChar) {
@@ -207,17 +207,17 @@ Token nextToken(Lexer* lexer) {
       }
     } break;
 
-    // operators "*" "%" "^" "~"
-    case '*':  case '%':  case '^':  case '~':
+    // operators "+" "*" "%" "^" "~"
+    case '+':  case '*':  case '%':  case '^':  case '~':
     {
       token.kind = TOKEN_SYMBOL;
     } break;
 
-    // operators "-" "--" "->"
+    // operators "-" "->"
     case '-':
     {
       token.kind = TOKEN_SYMBOL;
-      if (peekChar(lexer) == '>' || peekChar(lexer) == lexer->currentChar) {
+      if (peekChar(lexer) == '>') {
         nextChar(lexer);
       }
     } break;
@@ -266,9 +266,9 @@ Token nextToken(Lexer* lexer) {
   const char* end = &lexer->source->content.chars[lexer->index];
   token.chars = stringFromRange(start, (token.kind == TOKEN_EOF) ? end-1 : end);
   if (token.kind == TOKEN_ERROR) {
+    string msg = generateError(token.source, token.start, errorLoc, token.end, errorMsg.chars);
     token.error = (Error*) malloc(sizeof(Error));
-    *token.error = generateError(errorLoc, token.source, token.start, token.end,
-                                 errorMsg.chars);
+    *token.error = createError(errorLoc, msg, NULL);
   }
 
   return token;

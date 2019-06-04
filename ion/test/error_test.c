@@ -129,6 +129,7 @@ static TestResult testMessages() {
     Source src = sourceFromString("  123xyz  // error");
     string msg = generateError(&src, loc(1, 3), loc(1, 6), loc(1, 8),
                                "invalid integer character '%c'", 'x');
+    TEST(assertTrue(msg.owned));
     TEST(assertEqualStr(msg,
          "<cstring>:1:6: \e[31mError:\e[39m invalid integer character 'x'\n"
          "  123xyz  // error\n  \e[32m~~~^~~\e[39m\n"));
@@ -140,6 +141,7 @@ static TestResult testMessages() {
     Source src = sourceFromString("  $23xyz  // error");
     string msg = generateError(&src, loc(1, 3), loc(1, 3), loc(1, 3),
                                "invalid character '%c'", '$');
+    TEST(assertTrue(msg.owned));
     TEST(assertEqualStr(msg,
          "<cstring>:1:3: \e[31mError:\e[39m invalid character '$'\n"
          "  $23xyz  // error\n  \e[32m^\e[39m\n"));
@@ -151,6 +153,7 @@ static TestResult testMessages() {
     Source src = sourceFromString("  /* *\n/");
     string msg = generateError(&src, loc(1, 3), loc(1, 3), loc(2, 1),
                                "unclosed multi-line comment");
+    TEST(assertTrue(msg.owned));
     TEST(assertEqualStr(msg,
          "<cstring>:1:3: \e[31mError:\e[39m unclosed multi-line comment\n"
          "  /* *\n  \e[32m^~~~~\e[39m\n"));
@@ -162,6 +165,7 @@ static TestResult testMessages() {
     Source src = sourceFromString("f(\n  x, 123");
     string msg = generateError(&src, loc(1, 2), loc(2, 9), loc(2, 9),
                                "missing closing ')'");
+    TEST(assertTrue(msg.owned));
     TEST(assertEqualStr(msg,
          "<cstring>:2:9: \e[31mError:\e[39m missing closing ')'\n"
          "  x, 123\n\e[32m~~~~~~~~^\e[39m\n"));
@@ -173,6 +177,7 @@ static TestResult testMessages() {
     Source src = sourceFromString("()");
     string msg = generateNote(&src, loc(1, 1), loc(1, 1), loc(1, 2),
                               "empty parentheses");
+    TEST(assertTrue(msg.owned));
     TEST(assertEqualStr(msg,
          "<cstring>:1:1: \e[90mNote:\e[39m empty parentheses\n"
          "()\n\e[32m^~\e[39m\n"));
@@ -184,6 +189,7 @@ static TestResult testMessages() {
     Source src = sourceFromString("print()");
     string msg = generateWarning(&src, loc(1, 1), loc(1, 1), loc(1, 5),
                                  "unknown function");
+    TEST(assertTrue(msg.owned));
     TEST(assertEqualStr(msg,
          "<cstring>:1:1: \e[35mWarning:\e[39m unknown function\n"
          "print()\n\e[32m^~~~~\e[39m\n"));
@@ -195,6 +201,7 @@ static TestResult testMessages() {
     Source src = sourceFromString("i += 1");
     string msg = generateHint(&src, loc(1, 1), loc(1, 1), loc(1, 6),
                               "can be replaced with increment '++'");
+    TEST(assertTrue(msg.owned));
     TEST(assertEqualStr(msg,
          "<cstring>:1:1: \e[33mHint:\e[39m can be replaced with increment '++'\n"
          "i += 1\n\e[32m^~~~~~\e[39m\n"));

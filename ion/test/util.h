@@ -1,6 +1,64 @@
 #ifndef __UTIL_H__
 #define __UTIL_H__
 
+
+/**
+ * Test Util
+ * =========
+ *
+ * This header contains some useful tools to simplify some common tasks during automatic testing as
+ * well as additional assert functions that are not provided by CUnit.
+ *
+ *
+ * File Support
+ * ------------
+ *
+ * Sometimes it is necessary to test file import or export. The `WRITE_FILE()` writes some text to
+ * a file, that can be read by a unit test. The file name is set by defining `FILENAME`. If the
+ * constant is not defined, a default name is used. At the end the file should be deleted with
+ * `DELETE_FILE()`.
+ *
+ * ```c {.line-numbers}
+ * #define FILENAME "test_input.txt"  // optional, will default
+ * #include "util.h"
+ *
+ * int main() {
+ *  WRITE_FILE("lorem ipsum dolor");
+ *  // TODO: read file given by FILENAME
+ *  // TODO: test file content
+ *  DELETE_FILE();
+ * }
+ * ```
+ *
+ *
+ * Assert Enums
+ * ------------
+ *
+ * For testing the equality of enums, there exit a generator to create an assert function for a
+ * some enum. There must exit a `strMyEnum()` function that returns a string for a each enum value.
+ *
+ * ```c {.line-numbers}
+ * #include "util.h"
+ *
+ * typedef enum MyEnum {
+ *   OPTION0, OPTION1
+ * } MyEnum;
+ *
+ * const char* strMyEnum(MyEnum e) {
+ *   return (e == OPTION0) ? "OPTION0" : "OPTION1";
+ * }
+ *
+ * GENERATE_ASSERT_EQUAL_ENUM(MyEnum)
+ *
+ * int main() {
+ *   MyEnum e = OPTION0;
+ *   assertEqualEnum(MyEnum, e, OPTION0);
+ *   assertNotEqualEnum(MyEnum, e, OPTION1);
+ * }
+ * ```
+ */
+
+
 #include "cunit.h"
 
 #include <stdbool.h>
@@ -15,15 +73,15 @@
 #endif
 
 
-#define WRITE_FILE(s)                      \
-  do {                                     \
-    bool __ok = writeFile(FILENAME, s);    \
-    if (!__ok) {                           \
-      FAIL("could not write test file");   \
-      DELETE_FILE();                       \
-      ABORT(0);                            \
-    }                                      \
-  } while (0);                             \
+#define WRITE_FILE(s)                     \
+  do {                                    \
+    bool __ok = writeFile(FILENAME, s);   \
+    if (!__ok) {                          \
+      FAIL("could not write test file");  \
+      DELETE_FILE();                      \
+      ABORT(0);                           \
+    }                                     \
+  } while (0);                            \
 
 static bool writeFile(const char* fileName, const char* content) {
   FILE* file = fopen(fileName, "w");
@@ -55,21 +113,49 @@ static bool deleteFile(const char* fileName) {
 }
 
 
+#define assertEqualEnum(KIND, k, e)  __assertEqual##KIND(__FILE__, __LINE__, k, e)
+#define assertNotEqualEnum(KIND, k, e)  __assertNotEqual##KIND(__FILE__, __LINE__, k, e)
+
+#define GENERATE_ASSERT_EQUAL_ENUM(KIND)                                               \
+static bool __assertEqual##KIND(const char* file, int line, KIND kind, KIND exp) {     \
+  printVerbose(__PROMPT, file, line);                                                  \
+  if (kind == exp) {                                                                   \
+    printVerbose(GRN "OK\n" RST);                                                      \
+    return true;                                                                       \
+  } else {                                                                             \
+    printVerbose(RED "ERROR: " RST);                                                   \
+    printVerbose("expected enum [%s] == [%s]\n", str##KIND(kind), str##KIND(exp));     \
+    return false;                                                                      \
+  }                                                                                    \
+}                                                                                      \
+static bool __assertNotEqual##KIND(const char* file, int line, KIND kind, KIND exp) {  \
+  printVerbose(__PROMPT, file, line);                                                  \
+  if (kind != exp) {                                                                   \
+    printVerbose(GRN "OK\n" RST);                                                      \
+    return true;                                                                       \
+  } else {                                                                             \
+    printVerbose(RED "ERROR: " RST);                                                   \
+    printVerbose("expected enum [%s] != [%s]\n", str##KIND(kind), str##KIND(exp));     \
+    return false;                                                                      \
+  }                                                                                    \
+}                                                                                      \
+
+
+
 #define assertEqualStr(s, cs)  __assertEqualStr(__FILE__, __LINE__, s, cs)
 static bool __assertEqualStr(const char* file, int line, string s, const char* cs) {
   printVerbose(__PROMPT, file, line);
   string exp = stringFromArray(cs);
 
-  int index = 0;
-  bool equal = s.len == exp.len;
-
-  if (!equal) {
+  if (s.len != exp.len) {
     printVerbose(RED "ERROR: " RST);
     printVerbose("in \"%.*s\"%s expected length [%d] == [%d]\n",
                  (s.len <= 5 ? s.len : 5), s.chars, (s.len > 5 ? "~" : ""), s.len, exp.len);
     return false;
   }
 
+  int index = 0;
+  bool equal = true;
   while (index < s.len && equal) {
     equal = s.chars[index] == exp.chars[index];
     if (equal) {

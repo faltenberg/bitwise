@@ -16,6 +16,18 @@ typedef enum ErrorCode {
 
 int main() {
   printf("ION COMPILER\n");
+
+  Source src = sourceFromString("x + y");
+  if (src.status != SOURCE_OK) {
+    printf("cannot read source\n");
+    deleteSource(&src);
+    return FILE_ERROR;
+  }
+
+  ASTNode* node = parse(&src);
+
+  deleteNode(node);
+  deleteSource(&src);
   return SUCCESS;
 }
 

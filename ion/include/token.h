@@ -107,8 +107,8 @@
  */
 typedef enum TokenKind {
   TOKEN_NONE,
-  TOKEN_EOF,
   TOKEN_ERROR,
+  TOKEN_EOF,
   TOKEN_COMMENT,
   TOKEN_INT,
   TOKEN_NAME,
@@ -118,12 +118,12 @@ typedef enum TokenKind {
 
 
 /**
- * `str()` returns the `TokenKind` in a string format.
+ * `strTokenKind()` returns the `TokenKind` as a string.
  *
  * - **param:** `kind` - the token kind
  * - **return:** the string representation of the token kind
  */
-string str(TokenKind kind);
+const char* strTokenKind(TokenKind kind);
 
 
 /**
