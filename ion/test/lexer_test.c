@@ -10,8 +10,11 @@
 #include <string.h>
 
 
+GENERATE_ASSERT_EQUAL_ENUM(TokenKind)
+
+
 #define msg(loc, msg, line, spaces, indicator) \
-        "<cstring>:"loc": \e[31merror:\e[39m "msg"\n"line"\n"spaces"\e[32m"indicator"\e[39m\n"
+        "<cstring>:"loc": \e[31mError:\e[39m "msg"\n"line"\n"spaces"\e[32m"indicator"\e[39m\n"
 
 
 static Error* error(Location loc, const char* message) {
@@ -61,15 +64,12 @@ static bool __assertEqualLocation(const char* file, int line, Location loc, Loca
 
 #define assertEqualToken(t, exp)  __assertEqualToken(__FILE__, __LINE__, t, exp)
 static bool __assertEqualToken(const char* file, int line, Token t, Token exp) {
-  printVerbose(__PROMPT, file, line);
-  if (t.kind != exp.kind) {
-    printVerbose(RED "ERROR: " RST);
-    string tkind = str(t.kind);
-    string ekind = str(exp.kind);
-    printVerbose("expected Token [%.*s] == [%.*s]\n",
-                 tkind.len, tkind.chars, ekind.len, ekind.chars);
+  bool equal = assertEqualEnum(TokenKind, t.kind, exp.kind);
+  if (!equal) {
     return false;
   }
+
+  printVerbose(__PROMPT, file, line);
   if (!equalLoc(t.start, exp.start)) {
     printVerbose(RED "ERROR: " RST);
     printVerbose("expected Location [%d:%d] == [%d:%d]\n",
@@ -84,7 +84,7 @@ static bool __assertEqualToken(const char* file, int line, Token t, Token exp) {
   }
   printVerbose(GRN "OK\n" RST);
 
-  bool equal = __assertEqualStr(file, line, t.chars, exp.chars.chars);
+  equal = __assertEqualStr(file, line, t.chars, exp.chars.chars);
   if (!equal) {
     return false;
   }
@@ -665,7 +665,8 @@ static void addTestsTokenOperator(TestSuite* suite) {
 
   in = "++";
   createTest(suite, in, 1,
-    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 2), "++")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "+"),
+    token(TOKEN_SYMBOL, loc(1, 2), loc(1, 2), "+")
   );
 
   in = "-";
@@ -675,7 +676,8 @@ static void addTestsTokenOperator(TestSuite* suite) {
 
   in = "--";
   createTest(suite, in, 1,
-    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 2), "--")
+    token(TOKEN_SYMBOL, loc(1, 1), loc(1, 1), "-"),
+    token(TOKEN_SYMBOL, loc(1, 2), loc(1, 2), "-")
   );
 
   in = "*";
@@ -1097,7 +1099,8 @@ static void addTestsStatements(TestSuite* suite) {
     token(TOKEN_INT,     loc(1, 18), loc(1, 19), "10"),
     token(TOKEN_SYMBOL,  loc(1, 20), loc(1, 20), ";"),
     token(TOKEN_NAME,    loc(1, 22), loc(1, 22), "i"),
-    token(TOKEN_SYMBOL,  loc(1, 23), loc(1, 24), "++"),
+    token(TOKEN_SYMBOL,  loc(1, 23), loc(1, 23), "+"),
+    token(TOKEN_SYMBOL,  loc(1, 24), loc(1, 24), "+"),
     token(TOKEN_SYMBOL,  loc(1, 25), loc(1, 25), ")"),
     token(TOKEN_SYMBOL,  loc(1, 27), loc(1, 27), "{"),
     token(TOKEN_KEYWORD, loc(2,  2), loc(2,  9), "continue"),
@@ -1120,7 +1123,8 @@ static void addTestsStatements(TestSuite* suite) {
     token(TOKEN_INT,     loc(1, 19), loc(1, 19), "0"),
     token(TOKEN_SYMBOL,  loc(1, 20), loc(1, 20), ";"),
     token(TOKEN_NAME,    loc(1, 22), loc(1, 22), "i"),
-    token(TOKEN_SYMBOL,  loc(1, 23), loc(1, 24), "--"),
+    token(TOKEN_SYMBOL,  loc(1, 23), loc(1, 23), "-"),
+    token(TOKEN_SYMBOL,  loc(1, 24), loc(1, 24), "-"),
     token(TOKEN_SYMBOL,  loc(1, 25), loc(1, 25), ")"),
     token(TOKEN_SYMBOL,  loc(1, 27), loc(1, 27), "{"),
     token(TOKEN_KEYWORD, loc(2,  2), loc(2,  6), "break"),

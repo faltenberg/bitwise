@@ -26,54 +26,58 @@ static TestResult testCreation() {
 
   {
     Source src = sourceFromString("  123xyz  // error");
-    Error error = generateError(loc(1, 6), &src, loc(1, 3), loc(1, 8),
-                                "invalid integer character '%c'", 'x');
+    string msg = generateError(&src, loc(1, 3), loc(1, 6), loc(1, 8),
+                               "invalid integer character '%c'", 'x');
+    Error error = createError(loc(1, 6), msg, NULL);
     TEST(assertEqualInt(error.location.line, 1));
     TEST(assertEqualInt(error.location.pos, 6));
     TEST(assertEqualStr(error.message,
-         "<cstring>:1:6: \e[31merror:\e[39m invalid integer character 'x'\n"
+         "<cstring>:1:6: \e[31mError:\e[39m invalid integer character 'x'\n"
          "  123xyz  // error\n  \e[32m~~~^~~\e[39m\n"));
     TEST(assertNull(error.cause));
     deleteSource(&src);
-    strFree(&error.message);
+    strFree(&msg);
   }
 
   {
     Source src = sourceFromString("  $23xyz  // error");
-    Error error = generateError(loc(1, 3), &src, loc(1, 3), loc(1, 3),
-                                "invalid character '%c'", '$');
+    string msg = generateError(&src, loc(1, 3), loc(1, 3), loc(1, 3),
+                               "invalid character '%c'", '$');
+    Error error = createError(loc(1, 3), msg, NULL);
     TEST(assertEqualInt(error.location.line, 1));
     TEST(assertEqualInt(error.location.pos, 3));
     TEST(assertEqualStr(error.message,
-         "<cstring>:1:3: \e[31merror:\e[39m invalid character '$'\n"
+         "<cstring>:1:3: \e[31mError:\e[39m invalid character '$'\n"
          "  $23xyz  // error\n  \e[32m^\e[39m\n"));
     TEST(assertNull(error.cause));
     deleteSource(&src);
-    strFree(&error.message);
+    strFree(&msg);
   }
 
   {
     Source src = sourceFromString("  $23xyz\n");
-    Error error = generateError(loc(1, 3), &src, loc(1, 3), loc(1, 3),
-                                "invalid character '%c'", '$');
+    string msg = generateError(&src, loc(1, 3), loc(1, 3), loc(1, 3),
+                               "invalid character '%c'", '$');
+    Error error = createError(loc(1, 3), msg, NULL);
     TEST(assertEqualInt(error.location.line, 1));
     TEST(assertEqualInt(error.location.pos, 3));
     TEST(assertEqualStr(error.message,
-         "<cstring>:1:3: \e[31merror:\e[39m invalid character '$'\n"
+         "<cstring>:1:3: \e[31mError:\e[39m invalid character '$'\n"
          "  $23xyz\n  \e[32m^\e[39m\n"));
     TEST(assertNull(error.cause));
     deleteSource(&src);
-    strFree(&error.message);
+    strFree(&msg);
   }
 
   {
     Source src = sourceFromString("  /* *\n/");
-    Error error = generateError(loc(1, 3), &src, loc(1, 3), loc(2, 1),
-                                "unclosed multi-line comment");
+    string msg = generateError(&src, loc(1, 3), loc(1, 3), loc(2, 1),
+                               "unclosed multi-line comment");
+    Error error = createError(loc(1, 3), msg, NULL);
     TEST(assertEqualInt(error.location.line, 1));
     TEST(assertEqualInt(error.location.pos, 3));
     TEST(assertEqualStr(error.message,
-         "<cstring>:1:3: \e[31merror:\e[39m unclosed multi-line comment\n"
+         "<cstring>:1:3: \e[31mError:\e[39m unclosed multi-line comment\n"
          "  /* *\n  \e[32m^~~~~\e[39m\n"));
     TEST(assertNull(error.cause));
     deleteSource(&src);
@@ -98,8 +102,9 @@ static TestResult testDeletion() {
 
   {
     Source src = sourceFromString("  123xyz  // error");
-    Error cause = generateError(loc(1, 6), &src, loc(1, 3), loc(1, 8),
-                                "invalid integer character '%c'", 'x');
+    string msg = generateError(&src, loc(1, 3), loc(1, 6), loc(1, 8),
+                               "invalid integer character '%c'", 'x');
+    Error cause = createError(loc(1, 6), msg, NULL);
     Error error = createError(loc(2, 1), stringFromArray("error message"), &cause);
     deleteError(&error);
     TEST(assertEqualInt(cause.location.line, 0));
@@ -117,10 +122,95 @@ static TestResult testDeletion() {
 }
 
 
+static TestResult testMessages() {
+  TestResult result = {};
+
+  {
+    Source src = sourceFromString("  123xyz  // error");
+    string msg = generateError(&src, loc(1, 3), loc(1, 6), loc(1, 8),
+                               "invalid integer character '%c'", 'x');
+    TEST(assertEqualStr(msg,
+         "<cstring>:1:6: \e[31mError:\e[39m invalid integer character 'x'\n"
+         "  123xyz  // error\n  \e[32m~~~^~~\e[39m\n"));
+    strFree(&msg);
+    deleteSource(&src);
+  }
+
+  {
+    Source src = sourceFromString("  $23xyz  // error");
+    string msg = generateError(&src, loc(1, 3), loc(1, 3), loc(1, 3),
+                               "invalid character '%c'", '$');
+    TEST(assertEqualStr(msg,
+         "<cstring>:1:3: \e[31mError:\e[39m invalid character '$'\n"
+         "  $23xyz  // error\n  \e[32m^\e[39m\n"));
+    strFree(&msg);
+    deleteSource(&src);
+  }
+
+  {
+    Source src = sourceFromString("  /* *\n/");
+    string msg = generateError(&src, loc(1, 3), loc(1, 3), loc(2, 1),
+                               "unclosed multi-line comment");
+    TEST(assertEqualStr(msg,
+         "<cstring>:1:3: \e[31mError:\e[39m unclosed multi-line comment\n"
+         "  /* *\n  \e[32m^~~~~\e[39m\n"));
+    strFree(&msg);
+    deleteSource(&src);
+  }
+
+  {
+    Source src = sourceFromString("f(\n  x, 123");
+    string msg = generateError(&src, loc(1, 2), loc(2, 9), loc(2, 9),
+                               "missing closing ')'");
+    TEST(assertEqualStr(msg,
+         "<cstring>:2:9: \e[31mError:\e[39m missing closing ')'\n"
+         "  x, 123\n\e[32m~~~~~~~~^\e[39m\n"));
+    strFree(&msg);
+    deleteSource(&src);
+  }
+
+  {
+    Source src = sourceFromString("()");
+    string msg = generateNote(&src, loc(1, 1), loc(1, 1), loc(1, 2),
+                              "empty parentheses");
+    TEST(assertEqualStr(msg,
+         "<cstring>:1:1: \e[90mNote:\e[39m empty parentheses\n"
+         "()\n\e[32m^~\e[39m\n"));
+    strFree(&msg);
+    deleteSource(&src);
+  }
+
+  {
+    Source src = sourceFromString("print()");
+    string msg = generateWarning(&src, loc(1, 1), loc(1, 1), loc(1, 5),
+                                 "unknown function");
+    TEST(assertEqualStr(msg,
+         "<cstring>:1:1: \e[35mWarning:\e[39m unknown function\n"
+         "print()\n\e[32m^~~~~\e[39m\n"));
+    strFree(&msg);
+    deleteSource(&src);
+  }
+
+  {
+    Source src = sourceFromString("i += 1");
+    string msg = generateHint(&src, loc(1, 1), loc(1, 1), loc(1, 6),
+                              "can be replaced with increment '++'");
+    TEST(assertEqualStr(msg,
+         "<cstring>:1:1: \e[33mHint:\e[39m can be replaced with increment '++'\n"
+         "i += 1\n\e[32m^~~~~~\e[39m\n"));
+    strFree(&msg);
+    deleteSource(&src);
+  }
+
+  return result;
+}
+
+
 TestResult error_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<error>", "Test errors.");
   addTest(&suite, &testCreation, "testCreation");
   addTest(&suite, &testDeletion, "testDeletion");
+  addTest(&suite, &testMessages, "testMessages");
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
   return result;

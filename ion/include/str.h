@@ -68,9 +68,9 @@
  * - **field:** `chars` - the pointer to the characters
  */
 typedef struct string {
-  int         len;
-  bool        owned;
-  const char* chars;
+  unsigned int len;
+  bool         owned;
+  const char*  chars;
 } string;
 
 

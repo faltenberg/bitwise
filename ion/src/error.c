@@ -7,7 +7,11 @@
 
 #define RED "\e[31m"
 #define GRN "\e[32m"
+#define YEL "\e[33m"
 #define BLU "\e[34m"
+#define MGT "\e[35m"
+#define CYN "\e[36m"
+#define GRY "\e[90m"
 #define RST "\e[39m"
 
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
@@ -15,60 +19,7 @@
 
 
 Error createError(Location loc, string message, Error* cause) {
-  return (Error){ .message=message, .location=loc, .cause=cause };
-}
-
-
-Error generateError(Location loc, const Source* src, Location start, Location end,
-                    const char* format, ...) {
-  Error error = (Error){ .message=(string){ .len=0, .owned=true, .chars="" },
-                         .location=loc, .cause=NULL };
-
-  string message = error.message;
-  {
-    va_list args;
-    again0:
-    message.chars = (char*) malloc(message.len);
-    va_start(args, format);
-    int count = vsnprintf((char*) message.chars, message.len, format, args);
-    if (count >= message.len) {
-      free((char*) message.chars);
-      message.len = count + 1;
-      goto again0;
-    }
-    va_end(args);
-  }
-
-  string fileName = src->fileName;
-  string line = getLine(src, error.location.line);
-  line.len = (line.chars[line.len-1] == '\n') ? line.len - 1 : line.len;
-  const char* spaces = "                                                                      ";
-  const char* tildes = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
-  int intend = MAX(0, start.pos - 1);
-  int pre = MAX(0, error.location.pos - start.pos);
-  int post = MAX(0, end.pos - error.location.pos);
-  post = (error.location.line < end.line) ? line.len - intend : post;
-  {
-    again1:
-    error.message.chars = (char*) malloc(error.message.len);
-    int count = snprintf((char*) error.message.chars, error.message.len,
-                        "%.*s:%d:%d: "RED"error:"RST" %.*s\n"
-                        "%.*s\n"
-                        "%.*s"GRN"%.*s^%.*s"RST"\n",
-                        fileName.len, fileName.chars, error.location.line, error.location.pos,
-                        message.len, message.chars,
-                        line.len, line.chars,
-                        intend, spaces, pre, tildes, post, tildes);
-    if (count >= error.message.len) {
-      free((char*) error.message.chars);
-      error.message.len = count + 1;
-      goto again1;
-    }
-    free((char*) message.chars);
-  }
-  --error.message.len;  // it counted bytes for the total message including the '\0'
-
-  return error;
+  return (Error){ .location=loc, .message=message, .cause=cause };
 }
 
 
@@ -80,3 +31,70 @@ void deleteError(Error* error) {
     error->cause = NULL;
   }
 }
+
+
+static string generateMessage(const Source* src, Location start, Location caret, Location end,
+                              const char* topicColor, const char* topic, const char* description) {
+  string message = { .len=0, .owned=true };
+  string fileName = src->fileName;
+  string line = getLine(src, caret.line);
+  line.len = (line.chars[line.len-1] == '\n') ? line.len - 1 : line.len;
+  const char* spaces = "                                                                      ";
+  const char* tildes = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+  int intend = MAX(0, start.pos - 1);
+  intend = (start.line < caret.line) ? 0 : intend;
+  int pre = MAX(0, caret.pos - start.pos);
+  pre = (start.line < caret.line) ? caret.pos-1 : pre;
+  int post = MAX(0, end.pos - caret.pos);
+  post = (caret.line < end.line) ? line.len - intend : post;
+  {
+    again:
+    message.chars = (char*) malloc(message.len);
+    int count = snprintf((char*) message.chars, message.len,
+                         "%.*s:%d:%d: %s%s:"RST" %s\n"
+                         "%.*s\n"
+                         "%.*s"GRN"%.*s^%.*s"RST"\n",
+                         fileName.len, fileName.chars, caret.line, caret.pos,
+                         topicColor, topic, description,
+                         line.len, line.chars,
+                         intend, spaces, pre, tildes, post, tildes);
+    if (count >= message.len) {
+      free((char*) message.chars);
+      message.len = count + 1;
+      goto again;
+    }
+  }
+  --message.len;  // it counted bytes for the total message including the '\0'
+
+  return message;
+}
+
+
+#define GENERATE(TOPIC, COLOR)                                                                 \
+string generate##TOPIC(const Source* src, Location start, Location caret, Location end,        \
+                     const char* format, ...) {                                                \
+  string description = { .len=0, .owned=true };                                                \
+  {                                                                                            \
+    va_list args;                                                                              \
+    again:                                                                                     \
+    description.chars = (char*) malloc(description.len);                                       \
+    va_start(args, format);                                                                    \
+    int count = vsnprintf((char*) description.chars, description.len, format, args);           \
+    if (count >= description.len) {                                                            \
+      free((char*) description.chars);                                                         \
+      description.len = count + 1;                                                             \
+      goto again;                                                                              \
+    }                                                                                          \
+    va_end(args);                                                                              \
+  }                                                                                            \
+  --description.len;                                                                           \
+  string message = generateMessage(src, start, caret, end, COLOR, #TOPIC, description.chars);  \
+  strFree(&description);                                                                       \
+  return message;                                                                              \
+}                                                                                              \
+
+
+GENERATE(Error, RED)
+GENERATE(Note, GRY)
+GENERATE(Warning, MGT)
+GENERATE(Hint, YEL)
