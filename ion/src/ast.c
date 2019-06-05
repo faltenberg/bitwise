@@ -56,4 +56,5 @@ void deleteNode(ASTNode* node) {
   }
 
   free(node);
+  node = NULL;
 }

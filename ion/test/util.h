@@ -180,14 +180,13 @@ static bool __assertEqualStr(const char* file, int line, string s, const char* c
 static bool __assertEqualNumber(const char* file, int line, Number num, Number exp) {
   printVerbose(__PROMPT, file, line);
 
-  if (false) {  // TODO
+  if (num.value == exp.value) {
     printVerbose(GRN "OK\n" RST);
     return true;
   } else {
     printVerbose(RED "ERROR: " RST);
-    printVerbose("expected Number [%.*s] == [%.*s] (%s)\n",
-                 sbufLength(num.value), num.value, sbufLength(exp.value), exp.value,
-                 "not implemented");
+    printVerbose("expected Number [%d] == [%d] (%s)\n",
+                 num.value, exp.value, "not implemented");
     return false;
   }
 }

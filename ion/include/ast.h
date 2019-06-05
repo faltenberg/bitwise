@@ -40,6 +40,14 @@ typedef enum ExprKind {
 const char* strExprKind(ExprKind kind);
 
 
+/**
+ * ASTExpr<EXPR_NONE> { }
+ * ASTExpr<EXPR_INT> { value }
+ * ASTExpr<EXPR_NAME { name }
+ * ASTExpr<EXPR_PAREN> { expr }
+ * ASTExpr<EXPR_UNOP> { op, rhs }
+ * ASTExpr<EXPR_BINOP> { lhs, op, rhs }
+ */
 typedef struct ASTExpr {
   ExprKind kind;
   union {
@@ -65,6 +73,11 @@ typedef enum ASTKind {
 const char* strASTKind(ASTKind kind);
 
 
+/**
+ * ASTNode<AST_NONE> { messages }
+ * ASTNode<AST_ERROR> { messages, faultyNode }
+ * ASTNode<AST_EXPR> { messages, expr }
+ */
 typedef struct ASTNode {
   ASTKind      kind;
   SBUF(string) messages;

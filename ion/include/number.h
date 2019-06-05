@@ -10,9 +10,11 @@
 #include "sbuffer.h"
 #include "str.h"
 
+#include <stdint.h>
+
 
 typedef struct Number {
-  SBUF(char) value;
+  uint32_t value;
 } Number;
 
 

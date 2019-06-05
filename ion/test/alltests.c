@@ -10,6 +10,7 @@ extern TestResult error_alltests(PrintLevel);
 extern TestResult lexer_alltests(PrintLevel);
 extern TestResult number_alltests(PrintLevel);
 extern TestResult parser_alltests(PrintLevel);
+extern TestResult astprinter_alltests(PrintLevel);
 
 
 int main() {
@@ -23,5 +24,6 @@ int main() {
   result = unite(result, lexer_alltests(SUMMARY));
   result = unite(result, number_alltests(SPARSE));
   result = unite(result, parser_alltests(VERBOSE));
+  result = unite(result, astprinter_alltests(VERBOSE));
   printResult(result);
 }

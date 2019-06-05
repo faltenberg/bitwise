@@ -2,17 +2,16 @@
 
 
 Number numFromInt(int value) {
-  return (Number){ .value=NULL };
+  return (Number){ .value=value };
 }
 
 
 Number numFromString(string s) {
-  return (Number){ .value=NULL };
+  return (Number){ .value=atoi(s.chars) };
 }
 
 
 void deleteNum(Number* num) {
-  sbufFree(num->value);
 }
 
 
@@ -22,22 +21,22 @@ int bitSize(Number num) {
 
 
 Number add(Number a, Number b) {
-  return (Number){ .value=NULL };
+  return (Number){ .value=0 };
 }
 
 
 Number sub(Number a, Number b) {
-  return (Number){ .value=NULL };
+  return (Number){ .value=0 };
 }
 
 
 Number neg(Number a) {
-  return (Number){ .value=NULL };
+  return (Number){ .value=0 };
 }
 
 
 string toDecString(Number num) {
-  return stringFromArray("");
+  return stringFromArray("0");
 }
 
 
