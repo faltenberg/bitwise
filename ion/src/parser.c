@@ -42,23 +42,33 @@ static Token peek(Parser* parser) {
 }
 
 
+static string LPAREN;
+static string RPAREN;
 static string UNOP_PLUS;
 static string UNOP_MINUS;
 static string UNOP_NOT;
 static string UNOP_NEG;
-static string LPAREN;
-static string RPAREN;
+static string BINOP_ADD;
+static string BINOP_SUB;
+static string BINOP_MUL;
+static string BINOP_DIV;
+static string BINOP_MOD;
 
 
 static void init() {
   static bool initialized = false;
   if (!initialized) {
+    LPAREN = stringFromArray("(");
+    RPAREN = stringFromArray(")");
     UNOP_PLUS = stringFromArray("+");
     UNOP_MINUS = stringFromArray("-");
     UNOP_NOT = stringFromArray("!");
     UNOP_NEG = stringFromArray("~");
-    LPAREN = stringFromArray("(");
-    RPAREN = stringFromArray(")");
+    BINOP_ADD = stringFromArray("+");
+    BINOP_SUB = stringFromArray("-");
+    BINOP_MUL = stringFromArray("*");
+    BINOP_DIV = stringFromArray("/");
+    BINOP_MOD = stringFromArray("%");
     initialized = true;
   }
 }
@@ -131,9 +141,8 @@ static ASTNode* parseExprUnop(Parser* parser) {
 }
 
 
-static ASTNode* parseExpr(Parser* parser) {
+static ASTNode* parseTerm(Parser* parser) {
   Token token = next(parser);
-
   switch (token.kind) {
     case TOKEN_INT:
       return parseExprInt(parser);
@@ -145,8 +154,7 @@ static ASTNode* parseExpr(Parser* parser) {
       if (strequal(token.chars, UNOP_MINUS) ||
           strequal(token.chars, UNOP_PLUS) ||
           strequal(token.chars, UNOP_NOT) ||
-          strequal(token.chars, UNOP_NEG)
-         ) {
+          strequal(token.chars, UNOP_NEG)) {
         return parseExprUnop(parser);
       } else if (strequal(token.chars, LPAREN)) {
         return parseExprParen(parser);
@@ -154,6 +162,32 @@ static ASTNode* parseExpr(Parser* parser) {
 
     default:
       return createNode(AST_NONE);
+  }
+}
+
+
+static ASTNode* parseExpr(Parser* parser) {
+  ASTNode* term = parseTerm(parser);
+
+  Token token = peek(parser);
+  switch (token.kind) {
+    case TOKEN_SYMBOL:
+      if (strequal(token.chars, BINOP_ADD) ||
+          strequal(token.chars, BINOP_SUB) ||
+          strequal(token.chars, BINOP_MUL) ||
+          strequal(token.chars, BINOP_DIV) ||
+          strequal(token.chars, BINOP_MOD)
+         ) {
+        next(parser);
+        ASTNode* node = createExprNode(EXPR_BINOP);
+        node->expr.op = token.chars;
+        node->expr.lhs = term;
+        node->expr.rhs = parseExpr(parser);
+        return node;
+      }
+
+    default:
+      return term;
   }
 }
 

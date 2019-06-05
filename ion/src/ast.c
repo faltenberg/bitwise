@@ -47,10 +47,13 @@ void deleteNode(ASTNode* node) {
           deleteNode(node->expr.expr);
           break;
         case EXPR_UNOP:
+          strFree(&node->expr.op);
           deleteNode(node->expr.rhs);
+          break;
         case EXPR_BINOP:
-//TODO:          deleteNode(node->expr.lhs);
-//TODO:          deleteNode(node->expr.rhs);
+          strFree(&node->expr.op);
+          deleteNode(node->expr.lhs);
+          deleteNode(node->expr.rhs);
           break;
       } break;
   }

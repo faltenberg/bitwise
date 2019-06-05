@@ -65,6 +65,17 @@ static TestResult testPrintExprUnop() {
 }
 
 
+static TestResult testPrintExprBinop() {
+  TestResult result = {};
+  TEST(createTest("x+y", "(+ x y)"));
+  TEST(createTest("x-y", "(- x y)"));
+  TEST(createTest("x*y", "(* x y)"));
+  TEST(createTest("x/y", "(/ x y)"));
+  TEST(createTest("x%y", "(% x y)"));
+  return result;
+}
+
+
 TestResult astprinter_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<astprinter>", "Test AST printer.");
   addTest(&suite, &testPrintEmptyString, "testPrintEmptyString");
@@ -72,6 +83,7 @@ TestResult astprinter_alltests(PrintLevel verbosity) {
   addTest(&suite, &testPrintExprInt,     "testPrintExprInt");
   addTest(&suite, &testPrintExprName,    "testPrintExprName");
   addTest(&suite, &testPrintExprUnop,    "testPrintExprUnop");
+  addTest(&suite, &testPrintExprBinop,   "testPrintExprBinop");
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
   return result;

@@ -24,6 +24,6 @@ int main() {
   result = unite(result, lexer_alltests(SUMMARY));
   result = unite(result, number_alltests(SPARSE));
   result = unite(result, parser_alltests(VERBOSE));
-  result = unite(result, astprinter_alltests(VERBOSE));
+  result = unite(result, astprinter_alltests(SPARSE));
   printResult(result);
 }

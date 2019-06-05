@@ -114,7 +114,9 @@ static bool deleteFile(const char* fileName) {
 
 
 #define assertEqualEnum(KIND, k, e)  __assertEqual##KIND(__FILE__, __LINE__, k, e)
+#define __assertEqualEnum(KIND, f, l, k, e)  __assertEqual##KIND(f, l, k, e)
 #define assertNotEqualEnum(KIND, k, e)  __assertNotEqual##KIND(__FILE__, __LINE__, k, e)
+#define __assertNotEqualEnum(KIND, f, l, k, e)  __assertNotEqual##KIND(f, l, k, e)
 
 #define GENERATE_ASSERT_EQUAL_ENUM(KIND)                                               \
 static bool __assertEqual##KIND(const char* file, int line, KIND kind, KIND exp) {     \
