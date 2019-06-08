@@ -20,7 +20,7 @@ string strinternRange(const char* start, const char* end) {
   // return already interned string if possible
   for (char** it = internedStrings; it != sbufEnd(internedStrings); it++) {
     bool isSubstring = true;
-    bool subIdx = 0;
+    size_t subIdx = 0;
     size_t s = 0;
 
     // iterate over interned string and check if it contains the new string
@@ -47,7 +47,7 @@ string strinternRange(const char* start, const char* end) {
   memcpy(chars, start, length);
   chars[length] = '\0';
   sbufPush(internedStrings, chars);
-  return (string){ .chars=chars, .len=length };
+  return (string){ .chars=chars, .len=length, .owned=false };
 }
 
 
