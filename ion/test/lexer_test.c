@@ -213,7 +213,7 @@ static void __createTest(const char* file, int line, TestSuite* suite, const cha
   va_end(args);
 
   sbufPush(g_testCases, testCase);
-  addTest(suite, &testFunc, testCase.name);
+  __addTest(suite, &testFunc, testCase.name);
 }
 
 
@@ -1175,8 +1175,8 @@ static void addTestsStatements(TestSuite* suite) {
 
 TestResult lexer_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<lexer>", "Test lexer.");
-  addTest(&suite, &testCreation,  "testCreation");
-  addTest(&suite, &testErrorMsgs, "testErrorMsgs");
+  addTest(&suite, testCreation);
+  addTest(&suite, testErrorMsgs);
   addTestsEndOfLine(&suite);
   addTestsTokenName(&suite);
   addTestsTokenInt(&suite);

@@ -3,10 +3,13 @@
 #include "token.h"
 #include "lexer.h"
 #include "error.h"
+#include "strintern.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 
+
+/********************************************* PARSER ********************************************/
 
 
 typedef struct Parser {
@@ -55,23 +58,27 @@ static string BINOP_DIV;
 static string BINOP_MOD;
 
 
+static bool initialized = false;
 static void init() {
-  static bool initialized = false;
   if (!initialized) {
-    LPAREN = stringFromArray("(");
-    RPAREN = stringFromArray(")");
-    UNOP_PLUS = stringFromArray("+");
-    UNOP_MINUS = stringFromArray("-");
-    UNOP_NOT = stringFromArray("!");
-    UNOP_NEG = stringFromArray("~");
-    BINOP_ADD = stringFromArray("+");
-    BINOP_SUB = stringFromArray("-");
-    BINOP_MUL = stringFromArray("*");
-    BINOP_DIV = stringFromArray("/");
-    BINOP_MOD = stringFromArray("%");
+    strintern("() !~+-*/%");
+    LPAREN = strintern("(");
+    RPAREN = strintern(")");
+    UNOP_PLUS = strintern("+");
+    UNOP_MINUS = strintern("-");
+    UNOP_NOT = strintern("!");
+    UNOP_NEG = strintern("~");
+    BINOP_ADD = strintern("+");
+    BINOP_SUB = strintern("-");
+    BINOP_MUL = strintern("*");
+    BINOP_DIV = strintern("/");
+    BINOP_MOD = strintern("%");
     initialized = true;
   }
 }
+
+
+/****************************************** CREATE NODES *****************************************/
 
 
 static ASTNode* createNode(ASTKind kind) {
@@ -81,8 +88,40 @@ static ASTNode* createNode(ASTKind kind) {
 }
 
 
+static ASTNode* createEmptyNode() {
+  return createNode(AST_NONE);
+}
+
+
 static ASTNode* createErrorNode() {
-  ASTNode* node = createNode(AST_ERROR);
+  return createNode(AST_ERROR);
+}
+
+
+static ASTNode* createTokenNoneError(const Parser* parser) {
+  Token token = parser->currentToken;
+  ASTNode* node = createErrorNode();
+  string msg = generateError(token.source, token.start, token.start, token.end,
+                             "Token[TOKEN_NONE] should not appear - how did it happen?");
+  sbufPush(node->messages, msg);
+  node->faultyNode = createEmptyNode();
+  return node;
+}
+
+
+static ASTNode* createUnexpectedTokenError(const Parser* parser) {
+  Token token = parser->currentToken;
+  ASTNode* node = createErrorNode();
+  if (token.kind == TOKEN_ERROR) {
+    sbufPush(node->messages, token.error->message);
+  } else {
+    string msg = generateError(token.source, token.start, token.start, token.end,
+                               (token.chars.len > 0) ? "unexpected Token[%s %.*s]"
+                                                     : "unexpected Token[%s]",
+                               strTokenKind(token.kind), token.chars.len, token.chars.chars);
+    sbufPush(node->messages, msg);
+  }
+  node->faultyNode = createEmptyNode();
   return node;
 }
 
@@ -94,28 +133,32 @@ static ASTNode* createExprNode(ExprKind kind) {
 }
 
 
+/******************************************** PARSING ********************************************/
+
+
 static ASTNode* parseExpr(Parser* lexer);  // forward declaration
+static ASTNode* parseTerm(Parser* lexer);  // forward declaration
 
 
-static ASTNode* parseExprInt(Parser* parser) {
-  ASTNode* node = createExprNode(EXPR_INT);
-  node->expr.value = numFromString(parser->currentToken.chars);
-  return node;
-}
-
-
-static ASTNode* parseExprName(Parser* parser) {
-  ASTNode* node = createExprNode(EXPR_NAME);
-  node->expr.name = parser->currentToken.chars;
-  return node;
-}
-
+/*
 
 static ASTNode* parseExprParen(Parser* parser) {
-  Token lparen = parser->currentToken;
   ASTNode* node = createExprNode(EXPR_PAREN);
-  node->expr.expr = parseExpr(parser);
+  Token lparen = parser->currentToken;
   Token rparen = peek(parser);
+  if (rparen.kind == TOKEN_SYMBOL && strequal(rparen.chars, RPAREN)) {
+    next(parser);
+    ASTNode* error = createErrorNode();
+    sbufPush(error->messages,
+             generateError(parser->lexer->source, lparen.start, rparen.start, rparen.end,
+                           "missing expression"));
+    node->expr.expr = createEmptyNode();
+    error->faultyNode = node;
+    return error;
+  }
+
+  node->expr.expr = parseExpr(parser);
+  rparen = peek(parser);
   if (rparen.kind == TOKEN_SYMBOL && strequal(rparen.chars, RPAREN)) {
     next(parser);
     return node;
@@ -131,37 +174,106 @@ static ASTNode* parseExprParen(Parser* parser) {
     return error;
   }
 }
+*/
+
+
+static ASTNode* parseExprName(Parser* parser) {
+  ASTNode* node = createExprNode(EXPR_NAME);
+  string name = parser->currentToken.chars;
+  node->expr.name = strinternRange(name.chars, name.chars + name.len);
+  return node;
+}
+
+
+static ASTNode* parseExprInt(Parser* parser) {
+  ASTNode* node = createExprNode(EXPR_INT);
+  node->expr.value = numFromString(parser->currentToken.chars);
+  return node;
+}
 
 
 static ASTNode* parseExprUnop(Parser* parser) {
+  Token token = parser->currentToken;
+  ASTNode* rhs = parseTerm(parser);
   ASTNode* node = createExprNode(EXPR_UNOP);
-  node->expr.op = parser->currentToken.chars;
-  node->expr.rhs = parseExpr(parser);
-  return node;
+  node->expr.op = strinternRange(token.chars.chars, token.chars.chars + token.chars.len);
+  node->expr.rhs = rhs;
+  if (rhs->kind == AST_EXPR) {
+    return node;
+  } else {
+    ASTNode* error = createErrorNode();
+    Token current = parser->currentToken;
+    string msg = generateError(current.source, current.start, current.start, current.end,
+                             "missing operand");
+    sbufPush(error->messages, msg);
+    string note = generateNote(token.source, token.start, token.start, token.end,
+                               "for unary operator %.*s", token.chars.len, token.chars.chars);
+    sbufPush(error->messages, note);
+    error->faultyNode = node;
+    return error;
+  }
+}
+
+
+static ASTNode* parseExprBinop(Parser* parser, ASTNode* lhs) {
+  Token token = next(parser);
+  ASTNode* rhs = parseExpr(parser);
+  ASTNode* node = createExprNode(EXPR_BINOP);
+  node->expr.op = strinternRange(token.chars.chars, token.chars.chars + token.chars.len);
+  node->expr.lhs = lhs;
+  node->expr.rhs = rhs;
+  if (rhs->kind == AST_EXPR || true) {
+    // restore associativity
+    if (rhs->expr.kind == EXPR_BINOP) {
+      node->expr.rhs = rhs->expr.lhs;
+      rhs->expr.lhs = node;
+      node = rhs;
+    }
+    return node;
+  } else {
+    ASTNode* error = createErrorNode();
+    Token current = parser->currentToken;
+    string msg = generateError(current.source, current.start, current.start, current.end,
+                             "missing operand");
+    sbufPush(error->messages, msg);
+    string note = generateNote(token.source, token.start, token.start, token.end,
+                               "for binary operator %.*s", token.chars.len, token.chars.chars);
+    sbufPush(error->messages, note);
+    error->faultyNode = node;
+    return error;
+  }
 }
 
 
 static ASTNode* parseTerm(Parser* parser) {
   Token token = next(parser);
   switch (token.kind) {
-    case TOKEN_INT:
-      return parseExprInt(parser);
-
     case TOKEN_NAME:
       return parseExprName(parser);
 
+    case TOKEN_INT:
+      return parseExprInt(parser);
+
     case TOKEN_SYMBOL:
-      if (strequal(token.chars, UNOP_MINUS) ||
-          strequal(token.chars, UNOP_PLUS) ||
+      if (strequal(token.chars, UNOP_PLUS) ||
+          strequal(token.chars, UNOP_MINUS) ||
           strequal(token.chars, UNOP_NOT) ||
           strequal(token.chars, UNOP_NEG)) {
         return parseExprUnop(parser);
       } else if (strequal(token.chars, LPAREN)) {
-        return parseExprParen(parser);
+//        return parseExprParen(parser);
+      } else {
+        ASTNode* error = createErrorNode();
+        string msg = generateError(token.source, token.start, token.start, token.end,
+                                   "invalid unary operator %.*s",
+                                   token.chars.len, token.chars.chars);
+        sbufPush(error->messages, msg);
+        error->faultyNode = createEmptyNode();
+        return error;
       }
 
     default:
-      return createNode(AST_NONE);
+      return createUnexpectedTokenError(parser);
   }
 }
 
@@ -176,14 +288,8 @@ static ASTNode* parseExpr(Parser* parser) {
           strequal(token.chars, BINOP_SUB) ||
           strequal(token.chars, BINOP_MUL) ||
           strequal(token.chars, BINOP_DIV) ||
-          strequal(token.chars, BINOP_MOD)
-         ) {
-        next(parser);
-        ASTNode* node = createExprNode(EXPR_BINOP);
-        node->expr.op = token.chars;
-        node->expr.lhs = term;
-        node->expr.rhs = parseExpr(parser);
-        return node;
+          strequal(token.chars, BINOP_MOD)) {
+        return parseExprBinop(parser, term);
       }
 
     default:
@@ -192,9 +298,33 @@ static ASTNode* parseExpr(Parser* parser) {
 }
 
 
+static ASTNode* parseStart(Parser* parser) {
+  Token token = peek(parser);
+  if (token.kind == TOKEN_EOF) {
+    return createEmptyNode();
+  }
+
+  ASTNode* node = parseExpr(parser);
+
+  token = next(parser);
+  if (token.kind == TOKEN_EOF || node->kind == AST_ERROR) {
+    return node;
+  } else {
+    ASTNode* error = createErrorNode();
+    string msg = generateError(token.source, token.start, token.start, token.end,
+                               "expected Token[TOKEN_EOF]");
+    sbufPush(error->messages, msg);
+    error->faultyNode = node;
+    return error;
+  }
+}
+
+
 ASTNode* parse(const Source* src) {
   init();
   Lexer lexer = lexerFromSource(src);
   Parser parser = createParser(&lexer);
-  return parseExpr(&parser);
+  ASTNode* node = parseStart(&parser);
+  initialized = false;
+  return node;
 }

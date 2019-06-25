@@ -339,14 +339,14 @@ static TestResult testFreeBuffer() {
 
 TestResult sbuffer_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<sbuffer>", "Test stretchy buffers.");
-  addTest(&suite, &testBufferHeader,           "testBufferHeader");
-  addTest(&suite, &testEmptyBuffer,            "testEmptyBuffer");
-  addTest(&suite, &testGrowthOfEmptyBuffer,    "testGrowthOfEmptyBuffer");
-  addTest(&suite, &testGrowthOfNonEmptyBuffer, "testGrowthOfNonEmptyBuffer");
-  addTest(&suite, &testFitBuffer,              "testFitBuffer");
-  addTest(&suite, &testPushElements,           "testPushElements");
-  addTest(&suite, &testIteration,              "testIteration");
-  addTest(&suite, &testFreeBuffer,             "testFreeBuffer");
+  addTest(&suite, testBufferHeader);
+  addTest(&suite, testEmptyBuffer);
+  addTest(&suite, testGrowthOfEmptyBuffer);
+  addTest(&suite, testGrowthOfNonEmptyBuffer);
+  addTest(&suite, testFitBuffer);
+  addTest(&suite, testPushElements);
+  addTest(&suite, testIteration);
+  addTest(&suite, testFreeBuffer);
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
   return result;

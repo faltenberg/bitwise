@@ -145,9 +145,9 @@ static TestResult testStringComparison() {
 
 TestResult str_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<str>", "Test strings.");
-  addTest(&suite, &testStringCreation,   "testStringCreation");
-  addTest(&suite, &testStringDeletion,   "testStringDeletion");
-  addTest(&suite, &testStringComparison, "testStringComparison");
+  addTest(&suite, testStringCreation);
+  addTest(&suite, testStringDeletion);
+  addTest(&suite, testStringComparison);
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
   return result;

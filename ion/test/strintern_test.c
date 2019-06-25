@@ -214,11 +214,11 @@ static TestResult testRangeInterning() {
 
 TestResult strintern_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<strintern>", "Test string interning.");
-  addTest(&suite, &testEmptyString,          "testEmptyString");
-  addTest(&suite, &testFirstInterning,       "testFirstInterning");
-  addTest(&suite, &testConsecutiveInterning, "testConsecutiveInterning");
-  addTest(&suite, &testSubstringInterning,   "testSubstringInterning");
-  addTest(&suite, &testRangeInterning,       "testRangeInterning");
+  addTest(&suite, testEmptyString);
+  addTest(&suite, testFirstInterning);
+  addTest(&suite, testConsecutiveInterning);
+  addTest(&suite, testSubstringInterning);
+  addTest(&suite, testRangeInterning);
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
   return result;

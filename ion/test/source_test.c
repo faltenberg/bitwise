@@ -148,10 +148,10 @@ static TestResult testGetLine() {
 
 TestResult source_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<source>", "Test sources.");
-  addTest(&suite, &testCreationFromString, "testCreationFromString");
-  addTest(&suite, &testCreationFromFile,   "testCreationFromFile");
-  addTest(&suite, &testDeletion,           "testDeletion");
-  addTest(&suite, &testGetLine,            "testGetLine");
+  addTest(&suite, testCreationFromString);
+  addTest(&suite, testCreationFromFile);
+  addTest(&suite, testDeletion);
+  addTest(&suite, testGetLine);
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
   return result;

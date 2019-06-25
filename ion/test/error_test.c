@@ -215,9 +215,9 @@ static TestResult testMessages() {
 
 TestResult error_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<error>", "Test errors.");
-  addTest(&suite, &testCreation, "testCreation");
-  addTest(&suite, &testDeletion, "testDeletion");
-  addTest(&suite, &testMessages, "testMessages");
+  addTest(&suite, testCreation);
+  addTest(&suite, testDeletion);
+  addTest(&suite, testMessages);
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
   return result;

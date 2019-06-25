@@ -258,7 +258,7 @@ Token nextToken(Lexer* lexer) {
     {
       token.kind = TOKEN_ERROR;
       errorLoc = lexer->currentLoc;
-      errorMsg = stringFromArray("illegal character");
+      errorMsg = stringFromPrint("illegal character '%c'", c);
     } break;
   }
 

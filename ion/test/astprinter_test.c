@@ -4,10 +4,11 @@
 #include "astprinter.h"
 
 #include "parser.h"
+#include "strintern.h"
 
 
-#define createTest(in, exp)  __test(__FILE__, __LINE__, in, exp)
-static bool __test(const char* file, int line, const char* input, const char* exp) {
+#define createTest(in, exp) __createTest(__FILE__, __LINE__, in, exp)
+static bool __createTest(const char* file, int line, const char* input, const char* exp) {
   TestResult result = {};
 
   {
@@ -15,6 +16,8 @@ static bool __test(const char* file, int line, const char* input, const char* ex
     ASTNode* node = parse(&src);
     string s = printAST(node);
     TEST(__assertEqualStr(file, line, s, exp));
+//    printf("%.*s\n", s.len, s.chars);
+//    printf("%s\n", exp);
     strFree(&s);
     deleteNode(node);
     deleteSource(&src);
@@ -35,14 +38,14 @@ static TestResult testPrintEmptyString() {
 
 static TestResult testPrintError() {
   TestResult result = {};
-  TEST(createTest("(", "(error <cstring>:1:2: \e[31mError:\e[39m missing closing ')')"));
-  return result;
-}
-
-
-static TestResult testPrintExprInt() {
-  TestResult result = {};
-  TEST(createTest("123", "123"));
+  TEST(createTest("$",
+       "(error \"<cstring>:1:1: \e[31mError:\e[39m illegal character '$'\" in (none))"));
+  TEST(createTest("if",
+       "(error \"<cstring>:1:1: \e[31mError:\e[39m unexpected token TOKEN_KEYWORD\" in (none))"));
+  TEST(createTest("_",
+       "(error \"<cstring>:1:1: \e[31mError:\e[39m unexpected token TOKEN_KEYWORD\" in (none))"));
+  TEST(createTest("// comment",
+       "(error \"<cstring>:1:1: \e[31mError:\e[39m unexpected token TOKEN_COMMENT\" in (none))"));
   return result;
 }
 
@@ -55,16 +58,35 @@ static TestResult testPrintExprName() {
 }
 
 
-static TestResult testPrintExprUnop() {
+static TestResult testPrintExprInt() {
   TestResult result = {};
-  TEST(createTest("-x", "(- x)"));
-  TEST(createTest("+x", "(+ x)"));
-  TEST(createTest("!x", "(! x)"));
-  TEST(createTest("~x", "(~ x)"));
+  TEST(createTest("123", "123"));
+  TEST(createTest("1x",
+       "(error \"<cstring>:1:2: \e[31mError:\e[39m invalid integer format\" in (none))"));
   return result;
 }
 
 
+
+static TestResult testPrintExprUnop() {
+  TestResult result = {};
+  TEST(createTest("+x",  "(+ x)"));
+  TEST(createTest("-x",  "(- x)"));
+  TEST(createTest("!x",  "(! x)"));
+  TEST(createTest("~x",  "(~ x)"));
+  TEST(createTest("/x",
+       "(error \"<cstring>:1:1: \e[31mError:\e[39m invalid unary operator \"/\"\" in (none))"));
+  TEST(createTest("+",
+       "(+ (error \"<cstring>:1:2: \e[31mError:\e[39m unexpected token TOKEN_EOF\" in (none)))"));
+  TEST(createTest("!if",
+       "(! (error \"<cstring>:1:2: \e[31mError:\e[39m unexpected token TOKEN_KEYWORD\" in (none)))"));
+  TEST(createTest("!#x",
+       "(! (error \"<cstring>:1:2: \e[31mError:\e[39m illegal character '#'\" in (none)))"));
+  TEST(createTest("!!x", "(! (! x))"));
+  return result;
+}
+
+/*
 static TestResult testPrintExprBinop() {
   TestResult result = {};
   TEST(createTest("x+y", "(+ x y)"));
@@ -72,19 +94,31 @@ static TestResult testPrintExprBinop() {
   TEST(createTest("x*y", "(* x y)"));
   TEST(createTest("x/y", "(/ x y)"));
   TEST(createTest("x%y", "(% x y)"));
+  TEST(createTest("x+y+z", "(+ (+ x y) z)"));
   return result;
 }
 
 
+static TestResult testPrintExprParen() {
+  TestResult result = {};
+  TEST(createTest("(x)", "(x)"));
+  TEST(createTest("((x))", "((x))"));
+  return result;
+}
+*/
+
+
 TestResult astprinter_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<astprinter>", "Test AST printer.");
-  addTest(&suite, &testPrintEmptyString, "testPrintEmptyString");
-  addTest(&suite, &testPrintError,       "testPrintError");
-  addTest(&suite, &testPrintExprInt,     "testPrintExprInt");
-  addTest(&suite, &testPrintExprName,    "testPrintExprName");
-  addTest(&suite, &testPrintExprUnop,    "testPrintExprUnop");
-  addTest(&suite, &testPrintExprBinop,   "testPrintExprBinop");
+  addTest(&suite, testPrintEmptyString);
+  addTest(&suite, testPrintError);
+  addTest(&suite, testPrintExprName);
+  addTest(&suite, testPrintExprInt);
+  addTest(&suite, testPrintExprUnop);
+//  addTest(&suite, testPrintExprBinop);
+//  addTest(&suite, testPrintExprParen);
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
+  strinternFree();
   return result;
 }

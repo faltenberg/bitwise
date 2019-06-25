@@ -16,7 +16,7 @@ static TestResult testCreation() {
 
 TestResult number_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<number>", "Test numbers.");
-  addTest(&suite, &testCreation, "testCreation");
+  addTest(&suite, testCreation);
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
   return result;

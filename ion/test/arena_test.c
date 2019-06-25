@@ -139,9 +139,9 @@ static TestResult testAlignment() {
 
 TestResult arena_alltests(PrintLevel verbosity) {
   TestSuite suite = newSuite("TestSuite<arena>", "Test arena memory allocator.");
-  addTest(&suite, &testCreation,  "testCreation");
-  addTest(&suite, &testDeletion,  "testDeletion");
-  addTest(&suite, &testAlignment, "testAlignment");
+  addTest(&suite, testCreation);
+  addTest(&suite, testDeletion);
+  addTest(&suite, testAlignment);
   TestResult result = run(&suite, verbosity);
   deleteSuite(&suite);
   return result;

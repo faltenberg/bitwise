@@ -34,9 +34,11 @@ void deleteNode(ASTNode* node) {
   switch (node->kind) {
     case AST_NONE:
       break;
+
     case AST_ERROR:
       deleteNode(node->faultyNode);
       break;
+
     case AST_EXPR:
       switch (node->expr.kind) {
         case EXPR_NONE:
@@ -54,10 +56,8 @@ void deleteNode(ASTNode* node) {
           strFree(&node->expr.op);
           deleteNode(node->expr.lhs);
           deleteNode(node->expr.rhs);
-          break;
-      } break;
+      }
   }
 
   free(node);
-  node = NULL;
 }
